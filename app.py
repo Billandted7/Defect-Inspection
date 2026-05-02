@@ -10,7 +10,48 @@ from pathlib import Path
 import time
 
 os.environ["TRUST_REMOTE_CODE"] = "1"
+# =============================================
+# DOWNLOAD MODEL WEIGHTS FROM HUGGING FACE
+# This runs on startup in the cloud environment
+# where the model weights are not present locally
+# =============================================
+def download_model_if_needed():
+    """
+    Download model weights from Hugging Face
+    if not already present locally.
+    Only runs when deployed to Hugging Face Spaces
+    or any environment without local weights.
+    """
+    model_path = Path(
+        "exported_model/weights/torch/model.pt")
 
+    if not model_path.exists():
+        print("Model weights not found locally. "
+              "Downloading from Hugging Face...",
+              flush=True)
+
+        from huggingface_hub import hf_hub_download
+
+        os.makedirs(
+            "exported_model/weights/torch",
+            exist_ok=True
+        )
+
+        hf_hub_download(
+            repo_id="RMoroney/"
+                    "Defect-Inspection",
+            filename="exported_model/weights/"
+                     "torch/model.pt",
+            local_dir=".",
+        )
+
+        print("Model downloaded successfully.",
+              flush=True)
+    else:
+        print("Model weights found locally.",
+              flush=True)
+
+download_model_if_needed()
 # =============================================
 # PAGE CONFIGURATION
 # =============================================

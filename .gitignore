@@ -1,13 +1,21 @@
-# Ignore dataset - too large for GitHub
+# Dataset
 data/
 
-# Ignore virtual environment
+# Virtual environment
 venv/
 
-# Ignore Python cache files
+# Python cache
 __pycache__/
 *.pyc
 
-# Ignore any checkpoint files generated during training
-checkpoints/
+# Large model checkpoint files
+app_results/
+experiment_results/
+exported_model/
+scratch_model/
+
+# Anomalib results
 results/
+
+# Checkpoints
+checkpoints/
