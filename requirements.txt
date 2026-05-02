@@ -1,0 +1,13 @@
+torch
+torchvision
+anomalib
+opencv-python
+matplotlib
+scikit-learn
+pillow
+streamlit
+pandas
+joblib
+tqdm
+numpy
+huggingface_hub
