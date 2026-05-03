@@ -360,10 +360,43 @@ if page == "🔍 Inspect Component":
                 time.sleep(1)
                 st.session_state.model_trained = True
                 st.rerun()
-    else:
+else:
         st.success("✓ System ready for inspection")
         st.markdown("---")
 
+        st.markdown("### Sample Component Images")
+        st.markdown(
+            "Download any of the images below and "
+            "upload them to the inspector. "
+            "Each image is a real metal nut "
+            "photograph — the system will determine "
+            "whether it passes or fails inspection, "
+            "just as it would on a production line."
+        )
+
+        sample_folder = Path("sample_images")
+        if sample_folder.exists():
+            sample_files = sorted(
+                list(sample_folder.glob("*.png")) +
+                list(sample_folder.glob("*.jpg")))
+
+            if sample_files:
+                cols = st.columns(
+                    min(len(sample_files), 6))
+                for i, (col, img_path) in enumerate(
+                        zip(cols, sample_files)):
+                    with open(img_path, "rb") as f:
+                        img_data = f.read()
+                    with col:
+                        st.download_button(
+                            label=img_path.stem,
+                            data=img_data,
+                            file_name=img_path.name,
+                            mime="image/png",
+                            use_container_width=True
+                        )
+
+        st.markdown("---")
         st.markdown("### Upload Component Image")
         uploaded = st.file_uploader(
             "Choose image (PNG or JPG)",
