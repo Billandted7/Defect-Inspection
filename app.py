@@ -77,6 +77,26 @@ st.markdown("""
         text-align: center;
         border: 2px solid #ff8a80;
     }
+    iframe {
+        animation: none !important;
+        transition: none !important;
+    }
+    .stApp {
+        animation: none !important;
+        transition: none !important;
+    }
+    [data-testid="stAppViewContainer"] {
+        animation: none !important;
+        transition: none !important;
+    }
+    [data-testid="stVerticalBlock"] {
+        animation: none !important;
+        transition: none !important;
+    }
+    * {
+        animation-duration: 0s !important;
+        transition-duration: 0s !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -122,14 +142,12 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "Built by Rhys Moroney  \n"
-    "Quality Engineering Portfolio"
+    "Built by Rebecca Moroney  \n"
+    "AI Implementation withinQuality Engineering"
 )
 
 # =============================================
 # CACHED INFERENCE FUNCTION
-# st.cache_data means this only reruns if the
-# input image bytes change — prevents rerun loop
 # =============================================
 @st.cache_data
 def run_inference_cached(img_bytes):
@@ -140,7 +158,6 @@ def run_inference_cached(img_bytes):
     os.environ["TRUST_REMOTE_CODE"] = "1"
     from anomalib.deploy import TorchInferencer
 
-    # Decode image from bytes
     nparr = np.frombuffer(img_bytes, np.uint8)
     img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
@@ -360,7 +377,6 @@ if page == "🔍 Inspect Component":
 
         if uploaded is not None:
 
-            # Get image bytes — hashable for cache
             img_bytes = uploaded.getvalue()
 
             with st.spinner(
