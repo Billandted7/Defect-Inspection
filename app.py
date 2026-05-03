@@ -51,7 +51,7 @@ download_model_if_needed()
 st.set_page_config(
     page_title="Automated Visual Inspection System",
     page_icon="🔍",
-    layout="wide",
+    layout="centered",
     initial_sidebar_state="expanded",
 )
 
