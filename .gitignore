@@ -8,14 +8,17 @@ venv/
 __pycache__/
 *.pyc
 
-# Large model checkpoint files
+# All model weights and checkpoints
+*.ckpt
+*.pt
+*.joblib
+*.npy
+
+# Result folders
 app_results/
 experiment_results/
 exported_model/
 scratch_model/
-
-# Anomalib results
 results/
-
-# Checkpoints
 checkpoints/
+portfolio_results/
