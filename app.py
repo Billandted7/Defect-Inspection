@@ -38,11 +38,10 @@ def download_model_if_needed():
         )
 
         hf_hub_download(
-            repo_id="RMoroney/"
-                    "Defect-Inspection",
-            filename="exported_model/weights/"
-                     "torch/model.pt",
-            local_dir=".",
+            repo_id="RMoroney/Defect-Inspection",
+            repo_type="model",
+            filename="model.pt",
+            local_dir="exported_model/weights/torch",
         )
 
         print("Model downloaded successfully.",
