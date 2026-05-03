@@ -10,18 +10,11 @@ from pathlib import Path
 import time
 
 os.environ["TRUST_REMOTE_CODE"] = "1"
+
 # =============================================
 # DOWNLOAD MODEL WEIGHTS FROM HUGGING FACE
-# This runs on startup in the cloud environment
-# where the model weights are not present locally
 # =============================================
 def download_model_if_needed():
-    """
-    Download model weights from Hugging Face
-    if not already present locally.
-    Only runs when deployed to Hugging Face Spaces
-    or any environment without local weights.
-    """
     model_path = Path(
         "exported_model/weights/torch/model.pt")
 
@@ -51,11 +44,12 @@ def download_model_if_needed():
               flush=True)
 
 download_model_if_needed()
+
 # =============================================
 # PAGE CONFIGURATION
 # =============================================
 st.set_page_config(
-    page_title="F1 Defect Inspection System",
+    page_title="Automated Visual Inspection System",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -93,19 +87,17 @@ if "model_trained" not in st.session_state:
     st.session_state.model_trained = False
 if "inspection_log" not in st.session_state:
     st.session_state.inspection_log = []
+if "last_result" not in st.session_state:
+    st.session_state.last_result = None
+if "last_filename" not in st.session_state:
+    st.session_state.last_filename = None
 
-# =============================================
-# CALIBRATED THRESHOLD
-# Set using 99th percentile of good test images
-# Good parts: min 0.29, max 0.60, mean 0.42
-# At 0.577: 95% good pass, 96% defects caught
-# =============================================
 THRESHOLD = 0.577
 
 # =============================================
 # SIDEBAR
 # =============================================
-st.sidebar.title("🔍 F1 Inspection System")
+st.sidebar.title("🔍 Visual Inspection System")
 page = st.sidebar.radio(
     "Navigate",
     ["🔍 Inspect Component",
@@ -132,7 +124,7 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "Built by Rhys Moroney  \n"
+    "Built by Rebecca Moroney  \n"
     "Quality Engineering Portfolio"
 )
 
@@ -140,13 +132,7 @@ st.sidebar.markdown(
 # INFERENCE
 # =============================================
 def run_inference(img_rgb):
-    """
-    Run real PatchCore inference on a single image.
-    Uses exported model.pt via TorchInferencer.
-    Threshold calibrated at 0.577:
-    - 95% of good parts pass
-    - 96% of defects caught
-    """
+    os.environ["TRUST_REMOTE_CODE"] = "1"
     from anomalib.deploy import TorchInferencer
 
     inferencer = TorchInferencer(
@@ -202,11 +188,6 @@ def run_inference(img_rgb):
 # DEFECT CLASSIFICATION
 # =============================================
 def classify_defect(anomaly_map, score):
-    """
-    Classify defect type from anomaly map shape.
-    Uses spatial heuristics based on known
-    MVTec metal nut defect characteristics.
-    """
     if score < THRESHOLD:
         return "No defect", 0.0
 
@@ -260,7 +241,6 @@ def classify_defect(anomaly_map, score):
 # VISUALS
 # =============================================
 def make_overlay(img_rgb, anomaly_map):
-    """Heatmap blended onto original image."""
     heatmap = cv2.applyColorMap(
         (anomaly_map * 255).astype(np.uint8),
         cv2.COLORMAP_JET
@@ -277,10 +257,6 @@ def make_overlay(img_rgb, anomaly_map):
 
 
 def make_zoomed_mask(img_rgb, anomaly_map):
-    """
-    Draw red contours on image and zoom into
-    the defect region with padding.
-    """
     pred_mask = (
         anomaly_map > 0.6
     ).astype(np.uint8) * 255
@@ -327,7 +303,7 @@ def make_zoomed_mask(img_rgb, anomaly_map):
 # =============================================
 if page == "🔍 Inspect Component":
 
-    st.title("🔍 F1 Component Visual Inspection System")
+    st.title("🔍 Automated Visual Inspection System")
     st.markdown(
         "Upload a component image for automated defect "
         "detection using PatchCore anomaly detection. "
@@ -341,7 +317,8 @@ if page == "🔍 Inspect Component":
     if not model_path.exists():
         st.error(
             "Exported model not found. "
-            "Run export_model.py first."
+            "Please wait for download to complete "
+            "and refresh the page."
         )
         st.stop()
 
@@ -366,52 +343,102 @@ if page == "🔍 Inspect Component":
             "Choose image (PNG or JPG)",
             type=["png", "jpg", "jpeg"],
             help=(
-                "Upload metal nut images for best "
-                "results. The model was trained on "
-                "this component category specifically. "
-                "Test images available in "
-                "data/mvtec/metal_nut/test/"
+                "Upload a metal nut image. "
+                "The model was trained on this "
+                "component category specifically."
             )
         )
 
         if uploaded is not None:
-            st.markdown("---")
-            st.markdown("### Inspection Results")
+            # Only run inference if this is a new image
+            if uploaded.name != \
+                    st.session_state.last_filename:
 
-            file_bytes = np.frombuffer(
-                uploaded.read(), np.uint8)
-            img_bgr = cv2.imdecode(
-                file_bytes, cv2.IMREAD_COLOR)
-            img_rgb = cv2.cvtColor(
-                img_bgr, cv2.COLOR_BGR2RGB)
+                file_bytes = np.frombuffer(
+                    uploaded.read(), np.uint8)
+                img_bgr = cv2.imdecode(
+                    file_bytes, cv2.IMREAD_COLOR)
+                img_rgb = cv2.cvtColor(
+                    img_bgr, cv2.COLOR_BGR2RGB)
 
-            with st.spinner(
-                    "Running PatchCore inference..."):
-                score, img_resized, anomaly_map = \
-                    run_inference(img_rgb)
+                with st.spinner(
+                        "Running PatchCore "
+                        "inference..."):
+                    score, img_resized, anomaly_map\
+                        = run_inference(img_rgb)
 
-            verdict = "PASS" if score <= THRESHOLD \
-                else "FAIL"
-            defect_type, confidence = classify_defect(
-                anomaly_map, score)
-            score_pct = score * 100
-            threshold_pct = THRESHOLD * 100
+                verdict = "PASS" \
+                    if score <= THRESHOLD else "FAIL"
+                defect_type, confidence = \
+                    classify_defect(anomaly_map, score)
 
-            # ==============================
-            # PASS — original image only
-            # ==============================
-            if verdict == "PASS":
+                # Cache result to prevent rerun loop
+                st.session_state.last_result = {
+                    "score": score,
+                    "img_resized": img_resized,
+                    "anomaly_map": anomaly_map,
+                    "verdict": verdict,
+                    "defect_type": defect_type,
+                    "confidence": confidence,
+                    "filename": uploaded.name,
+                }
+                st.session_state.last_filename = \
+                    uploaded.name
+
+                # Log inspection
+                st.session_state.inspection_log\
+                    .append({
+                        "timestamp": pd.Timestamp
+                        .now().strftime(
+                            "%Y-%m-%d %H:%M:%S"),
+                        "filename": uploaded.name,
+                        "anomaly_score": round(
+                            score, 4),
+                        "threshold": THRESHOLD,
+                        "verdict": verdict,
+                        "defect_type": defect_type
+                        if verdict == "FAIL"
+                        else "—",
+                    })
+
+                pd.DataFrame(
+                    st.session_state.inspection_log
+                ).to_csv(
+                    "inspection_log.csv", index=False)
+
+            # Display cached result
+            if st.session_state.last_result:
+                r = st.session_state.last_result
+                score = r["score"]
+                img_resized = r["img_resized"]
+                anomaly_map = r["anomaly_map"]
+                verdict = r["verdict"]
+                defect_type = r["defect_type"]
+                confidence = r["confidence"]
+                score_pct = score * 100
+                threshold_pct = THRESHOLD * 100
+
+                st.markdown("---")
+                st.markdown("### Inspection Results")
 
                 c1, c2, c3 = st.columns(3)
 
                 with c1:
-                    st.markdown(
-                        '<div class="pass-badge">'
-                        '✓ PASS<br>'
-                        'No Defect Detected'
-                        '</div>',
-                        unsafe_allow_html=True
-                    )
+                    if verdict == "PASS":
+                        st.markdown(
+                            '<div class="pass-badge">'
+                            '✓ PASS<br>'
+                            'No Defect Detected'
+                            '</div>',
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown(
+                            '<div class="fail-badge">'
+                            f'✗ FAIL<br>{defect_type}'
+                            '</div>',
+                            unsafe_allow_html=True
+                        )
 
                 with c2:
                     delta_val = (
@@ -424,82 +451,22 @@ if page == "🔍 Inspect Component":
                             " vs threshold"
                         )
                     )
-
-                with c3:
-                    total = (
-                        len(st.session_state
-                            .inspection_log) + 1
-                    )
-                    passed = sum(
-                        1 for r in
-                        st.session_state.inspection_log
-                        if r["verdict"] == "PASS"
-                    ) + 1
-                    st.metric(
-                        "Session Inspections", total)
-                    st.metric(
-                        "Pass Rate",
-                        f"{passed/total*100:.0f}%"
-                    )
-
-                st.markdown("---")
-                col1, col2, col3 = st.columns(
-                    [1, 2, 1])
-                with col2:
-                    st.markdown("**Component Image**")
-                    st.image(
-                        img_resized,
-                        use_container_width=True
-                    )
-                    st.success(
-                        "✓ Component passed inspection."
-                        " No anomalies detected."
-                    )
-
-            # ==============================
-            # FAIL — overlay + zoomed mask
-            # ==============================
-            else:
-                overlay = make_overlay(
-                    img_resized, anomaly_map)
-                contour_img, zoom = make_zoomed_mask(
-                    img_resized, anomaly_map)
-
-                c1, c2, c3 = st.columns(3)
-
-                with c1:
-                    st.markdown(
-                        '<div class="fail-badge">'
-                        f'✗ FAIL<br>{defect_type}'
-                        '</div>',
-                        unsafe_allow_html=True
-                    )
-
-                with c2:
-                    delta_val = (
-                        score_pct - threshold_pct)
-                    st.metric(
-                        "Anomaly Score",
-                        f"{score_pct:.1f}%",
-                        delta=(
-                            f"{delta_val:.1f}%"
-                            " vs threshold"
+                    if verdict == "FAIL":
+                        st.markdown(
+                            f"**Defect:** "
+                            f"{defect_type}  \n"
+                            f"**Confidence:** "
+                            f"{confidence*100:.0f}%"
                         )
-                    )
-                    st.markdown(
-                        f"**Defect:** {defect_type}  \n"
-                        f"**Confidence:** "
-                        f"{confidence*100:.0f}%"
-                    )
 
                 with c3:
-                    total = (
-                        len(st.session_state
-                            .inspection_log) + 1
-                    )
+                    total = len(
+                        st.session_state
+                        .inspection_log)
                     passed = sum(
                         1 for r in
-                        st.session_state.inspection_log
+                        st.session_state
+                        .inspection_log
                         if r["verdict"] == "PASS"
                     )
                     st.metric(
@@ -507,72 +474,74 @@ if page == "🔍 Inspect Component":
                     st.metric(
                         "Pass Rate",
                         f"{passed/total*100:.0f}%"
+                        if total > 0 else "—"
                     )
 
                 st.markdown("---")
 
-                col1, col2 = st.columns(2)
+                if verdict == "PASS":
+                    col1, col2, col3 = st.columns(
+                        [1, 2, 1])
+                    with col2:
+                        st.markdown(
+                            "**Component Image**")
+                        st.image(
+                            img_resized,
+                            use_container_width=True
+                        )
+                        st.success(
+                            "✓ Component passed. "
+                            "No anomalies detected."
+                        )
+                else:
+                    overlay = make_overlay(
+                        img_resized, anomaly_map)
+                    _, zoom = make_zoomed_mask(
+                        img_resized, anomaly_map)
 
-                with col1:
-                    st.markdown("**Heatmap Overlay**")
-                    st.image(
-                        overlay,
-                        use_container_width=True
-                    )
-                    st.caption(
-                        "Red = high anomaly. "
-                        "Blue = normal."
-                    )
+                    col1, col2 = st.columns(2)
 
-                with col2:
-                    st.markdown(
-                        "**Defect Location — Zoomed**")
-                    st.image(
-                        zoom,
-                        use_container_width=True
-                    )
-                    st.caption(
-                        "Zoomed view with red outline "
-                        "around predicted defect region."
+                    with col1:
+                        st.markdown(
+                            "**Heatmap Overlay**")
+                        st.image(
+                            overlay,
+                            use_container_width=True
+                        )
+                        st.caption(
+                            "Red = high anomaly. "
+                            "Blue = normal."
+                        )
+
+                    with col2:
+                        st.markdown(
+                            "**Defect Location "
+                            "— Zoomed**")
+                        st.image(
+                            zoom,
+                            use_container_width=True
+                        )
+                        st.caption(
+                            "Red outline = predicted "
+                            "defect region."
+                        )
+
+                    st.markdown("---")
+                    st.error(
+                        f"⚠️ Component failed. "
+                        f"Detected: **{defect_type}**"
+                        f". Do not ship."
                     )
 
                 st.markdown("---")
-                st.error(
-                    f"⚠️ Component failed inspection. "
-                    f"Detected: **{defect_type}**. "
-                    f"Do not ship."
+                st.markdown("### Anomaly Score")
+                st.progress(min(score, 1.0))
+                st.markdown(
+                    f"Score: **{score_pct:.1f}%** | "
+                    f"Threshold: "
+                    f"**{threshold_pct:.1f}%** | "
+                    f"Verdict: **{verdict}**"
                 )
-
-            # Score gauge
-            st.markdown("---")
-            st.markdown("### Anomaly Score")
-            st.progress(min(score, 1.0))
-            st.markdown(
-                f"Score: **{score_pct:.1f}%** | "
-                f"Threshold: **{threshold_pct:.1f}%** | "
-                f"Verdict: **{verdict}**"
-            )
-
-            # Log
-            st.session_state.inspection_log.append({
-                "timestamp": pd.Timestamp.now()
-                .strftime("%Y-%m-%d %H:%M:%S"),
-                "filename": uploaded.name,
-                "anomaly_score": round(score, 4),
-                "threshold": THRESHOLD,
-                "verdict": verdict,
-                "defect_type": defect_type
-                if verdict == "FAIL" else "—",
-            })
-
-            pd.DataFrame(
-                st.session_state.inspection_log
-            ).to_csv("inspection_log.csv", index=False)
-
-            st.markdown(
-                "📋 Inspection logged. "
-                "View history in Dashboard."
-            )
 
 # =============================================
 # PAGE 2: DASHBOARD
@@ -580,10 +549,6 @@ if page == "🔍 Inspect Component":
 elif page == "📊 Dashboard":
 
     st.title("📊 Inspection Dashboard")
-    st.markdown(
-        "Real-time overview of all inspections "
-        "in this session."
-    )
 
     if os.path.exists("inspection_log.csv"):
         log_df = pd.read_csv("inspection_log.csv")
@@ -598,7 +563,8 @@ elif page == "📊 Dashboard":
         )
     else:
         total = len(log_df)
-        passed = len(log_df[log_df["verdict"] == "PASS"])
+        passed = len(
+            log_df[log_df["verdict"] == "PASS"])
         failed = total - passed
         pass_rate = passed / total * 100
 
@@ -704,37 +670,16 @@ elif page == "ℹ️ About":
 
     ---
 
-    ## Why It Matters in F1
-
-    In Formula 1, a single defective component
-    reaching a race car can cause catastrophic
-    failure. This system:
-
-    - Inspects components consistently without fatigue
-    - Localises exactly where the defect is
-    - Logs every inspection for full traceability
-    - Requires no defective training examples —
-      matching real factory conditions where defects
-      are rare
-
-    ---
-
     ## Model Performance
 
     | Metric | Score |
     |--------|-------|
     | Image AUROC | **0.9976** |
     | Pixel AUROC | **0.9868** |
-    | Image F1 Score | **0.9838** |
 
     ---
 
     ## Threshold Calibration
-
-    The acceptance threshold was calibrated by running
-    all 22 good test images through the model and
-    setting the threshold at the 99th percentile of
-    good part scores.
 
     | | Value |
     |---|---|
@@ -744,12 +689,6 @@ elif page == "ℹ️ About":
     | **Calibrated threshold** | **0.5770** |
     | Good parts passing | 95% (21/22) |
     | Defects caught | 96% (89/93) |
-
-    This represents the trade-off between false
-    positives (good parts incorrectly failed) and
-    false negatives (defects missed). The 99th
-    percentile approach is standard practice in
-    industrial inspection system design.
 
     ---
 
