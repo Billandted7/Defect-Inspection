@@ -80,6 +80,8 @@ if "inspection_log" not in st.session_state:
     st.session_state.inspection_log = []
 if "last_filename" not in st.session_state:
     st.session_state.last_filename = None
+if "selected_sample" not in st.session_state:
+    st.session_state.selected_sample = None
 
 THRESHOLD = 0.577
 
@@ -286,40 +288,72 @@ if page == "Inspect Component":
         st.success("System ready for inspection")
         st.markdown("---")
 
-        st.markdown("### Sample Component Images")
+        st.markdown("### Select or Upload a Component Image")
         st.markdown(
-            "Download any of the images below and "
-            "upload them to the inspector. "
-            "Each image is a real metal nut "
-            "photograph — the system will determine "
-            "whether it passes or fails inspection, "
-            "just as it would on a production line."
+            "Browse the sample images below and click "
+            "one to inspect it directly — or upload "
+            "your own image using the uploader."
         )
 
+        # Sample image gallery
         sample_folder = Path("sample_images")
+        selected_img_bytes = None
+        selected_img_name = None
+
         if sample_folder.exists():
             sample_files = sorted(
                 list(sample_folder.glob("*.png")) +
                 list(sample_folder.glob("*.jpg")))
+
             if sample_files:
-                cols = st.columns(
-                    min(len(sample_files), 6))
-                for col, img_path in zip(
-                        cols, sample_files):
-                    with open(
-                            img_path, "rb") as f:
-                        img_data = f.read()
-                    with col:
-                        st.download_button(
-                            label=img_path.stem,
-                            data=img_data,
-                            file_name=img_path.name,
-                            mime="image/png",
-                            use_container_width=True
-                        )
+                st.markdown("#### Sample Images")
+                st.markdown(
+                    "Each image is a real metal nut "
+                    "photograph. Click any image to "
+                    "inspect it."
+                )
+
+                # Show images in rows of 6
+                cols_per_row = 6
+                for i in range(
+                        0, len(sample_files),
+                        cols_per_row):
+                    row_files = sample_files[
+                        i:i + cols_per_row]
+                    cols = st.columns(len(row_files))
+                    for col, img_path in zip(
+                            cols, row_files):
+                        with open(
+                                img_path, "rb") as f:
+                            img_data = f.read()
+                        img_array = np.frombuffer(
+                            img_data, np.uint8)
+                        img_bgr = cv2.imdecode(
+                            img_array,
+                            cv2.IMREAD_COLOR)
+                        img_rgb = cv2.cvtColor(
+                            img_bgr,
+                            cv2.COLOR_BGR2RGB)
+                        with col:
+                            st.image(
+                                img_rgb,
+                                use_container_width=True
+                            )
+                            if st.button(
+                                    "Inspect",
+                                    key=f"btn_{img_path.stem}",
+                                    use_container_width=True
+                            ):
+                                selected_img_bytes = \
+                                    img_data
+                                selected_img_name = \
+                                    img_path.name
+                                st.session_state[
+                                    "selected_sample"
+                                ] = img_path.name
 
         st.markdown("---")
-        st.markdown("### Upload Component Image")
+        st.markdown("#### Or Upload Your Own Image")
         uploaded = st.file_uploader(
             "Choose image (PNG or JPG)",
             type=["png", "jpg", "jpeg"],
@@ -330,9 +364,30 @@ if page == "Inspect Component":
             )
         )
 
+        # Determine which image to process
         if uploaded is not None:
-
             img_bytes = uploaded.getvalue()
+            img_name = uploaded.name
+        elif selected_img_bytes is not None:
+            img_bytes = selected_img_bytes
+            img_name = selected_img_name
+        elif "selected_sample" in st.session_state \
+                and st.session_state[
+                    "selected_sample"] is not None:
+            sample_path = Path("sample_images") / \
+                st.session_state["selected_sample"]
+            if sample_path.exists():
+                with open(sample_path, "rb") as f:
+                    img_bytes = f.read()
+                img_name = sample_path.name
+            else:
+                img_bytes = None
+                img_name = None
+        else:
+            img_bytes = None
+            img_name = None
+
+        if img_bytes is not None:
 
             with st.spinner(
                     "Running PatchCore inference..."):
@@ -346,13 +401,13 @@ if page == "Inspect Component":
             score_pct = score * 100
             threshold_pct = THRESHOLD * 100
 
-            if uploaded.name != \
+            if img_name != \
                     st.session_state.last_filename:
                 st.session_state.inspection_log.append(
                     {
                         "timestamp": pd.Timestamp.now()
                         .strftime("%Y-%m-%d %H:%M:%S"),
-                        "filename": uploaded.name,
+                        "filename": img_name,
                         "anomaly_score": round(
                             score, 4),
                         "threshold": THRESHOLD,
@@ -361,7 +416,7 @@ if page == "Inspect Component":
                         if verdict == "FAIL" else "—",
                     })
                 st.session_state.last_filename = \
-                    uploaded.name
+                    img_name
                 pd.DataFrame(
                     st.session_state.inspection_log
                 ).to_csv(
