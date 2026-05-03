@@ -289,16 +289,11 @@ if page == "Inspect Component":
         st.markdown("---")
 
         st.markdown("### Select or Upload a Component Image")
-        st.markdown(
-            "Browse the sample images below and click "
-            "one to inspect it directly — or upload "
-            "your own image using the uploader."
-        )
-
-        # Sample image gallery
+        
         sample_folder = Path("sample_images")
         selected_img_bytes = None
         selected_img_name = None
+        img_bytes_pending = None
 
         if sample_folder.exists():
             sample_files = sorted(
@@ -306,51 +301,120 @@ if page == "Inspect Component":
                 list(sample_folder.glob("*.jpg")))
 
             if sample_files:
-                st.markdown("#### Sample Images")
-                st.markdown(
-                    "Each image is a real metal nut "
-                    "photograph. Click any image to "
-                    "inspect it."
+
+                # Only show gallery if no result yet
+                show_gallery = (
+                    st.session_state.get(
+                        "selected_sample") is None
+                    and img_bytes_pending is None
                 )
 
-                # Show images in rows of 6
-                cols_per_row = 6
-                for i in range(
-                        0, len(sample_files),
-                        cols_per_row):
-                    row_files = sample_files[
-                        i:i + cols_per_row]
-                    cols = st.columns(len(row_files))
-                    for col, img_path in zip(
-                            cols, row_files):
-                        with open(
-                                img_path, "rb") as f:
-                            img_data = f.read()
-                        img_array = np.frombuffer(
-                            img_data, np.uint8)
-                        img_bgr = cv2.imdecode(
-                            img_array,
-                            cv2.IMREAD_COLOR)
-                        img_rgb = cv2.cvtColor(
-                            img_bgr,
-                            cv2.COLOR_BGR2RGB)
-                        with col:
-                            st.image(
-                                img_rgb,
-                                use_container_width=True
-                            )
-                            if st.button(
-                                    "Inspect",
-                                    key=f"btn_{img_path.stem}",
-                                    use_container_width=True
-                            ):
-                                selected_img_bytes = \
-                                    img_data
-                                selected_img_name = \
-                                    img_path.name
-                                st.session_state[
-                                    "selected_sample"
-                                ] = img_path.name
+                if "gallery_index" not in \
+                        st.session_state:
+                    st.session_state.gallery_index = 0
+
+                idx = st.session_state.gallery_index
+                idx = max(0, min(
+                    idx, len(sample_files) - 1))
+
+                with st.expander(
+                        "Browse Sample Images",
+                        expanded=show_gallery):
+
+                    st.markdown(
+                        "Each image is a real metal "
+                        "nut photograph. Use the "
+                        "arrows to browse, then click "
+                        "Inspect to analyse it."
+                    )
+
+                    # Navigation row
+                    nav1, nav2, nav3, nav4, nav5 = \
+                        st.columns([1, 1, 3, 1, 1])
+
+                    with nav1:
+                        if st.button(
+                                "<<",
+                                use_container_width=True,
+                                key="first"):
+                            st.session_state\
+                                .gallery_index = 0
+                            st.rerun()
+
+                    with nav2:
+                        if st.button(
+                                "<",
+                                use_container_width=True,
+                                key="prev"):
+                            st.session_state\
+                                .gallery_index = max(
+                                    0, idx - 1)
+                            st.rerun()
+
+                    with nav3:
+                        st.markdown(
+                            f"<p style='text-align:"
+                            f"center;padding-top:8px;'>"
+                            f"Image {idx + 1} of "
+                            f"{len(sample_files)}"
+                            f"</p>",
+                            unsafe_allow_html=True
+                        )
+
+                    with nav4:
+                        if st.button(
+                                ">",
+                                use_container_width=True,
+                                key="next"):
+                            st.session_state\
+                                .gallery_index = min(
+                                    len(sample_files)
+                                    - 1, idx + 1)
+                            st.rerun()
+
+                    with nav5:
+                        if st.button(
+                                ">>",
+                                use_container_width=True,
+                                key="last"):
+                            st.session_state\
+                                .gallery_index = \
+                                len(sample_files) - 1
+                            st.rerun()
+
+                    # Show current image
+                    current_file = sample_files[idx]
+                    with open(
+                            current_file, "rb") as f:
+                        current_bytes = f.read()
+
+                    img_array = np.frombuffer(
+                        current_bytes, np.uint8)
+                    img_bgr = cv2.imdecode(
+                        img_array, cv2.IMREAD_COLOR)
+                    img_rgb = cv2.cvtColor(
+                        img_bgr, cv2.COLOR_BGR2RGB)
+
+                    col_left, col_img, col_right = \
+                        st.columns([1, 4, 1])
+                    with col_img:
+                        st.image(
+                            img_rgb,
+                            use_container_width=True,
+                            caption=current_file.stem
+                        )
+                        if st.button(
+                                "Inspect This Image",
+                                type="primary",
+                                use_container_width=True,
+                                key="inspect_gallery"):
+                            selected_img_bytes = \
+                                current_bytes
+                            selected_img_name = \
+                                current_file.name
+                            st.session_state[
+                                "selected_sample"
+                            ] = current_file.name
 
         st.markdown("---")
         st.markdown("#### Or Upload Your Own Image")
