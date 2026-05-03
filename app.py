@@ -38,7 +38,7 @@ def download_model_if_needed():
         )
 
         hf_hub_download(
-            repo_id="RMoroney/Defect-Inspection",
+            repo_id="RMoroney/Defect-Inspection-Model",
             repo_type="model",
             filename="model.pt",
             local_dir="exported_model/weights/torch",
