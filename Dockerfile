@@ -2,6 +2,8 @@ FROM python:3.13.5-slim
 
 WORKDIR /app
 
+ENV TRUST_REMOTE_CODE=1
+
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
