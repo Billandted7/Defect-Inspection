@@ -530,12 +530,21 @@ if page == "🔍 Inspect Component":
 
             st.markdown("---")
             st.markdown("### Anomaly Score")
-            st.progress(min(score, 1.0))
+            bar_color = "#4CAF50" if verdict == "PASS" else "#FF5722"
             st.markdown(
-                f"Score: **{score_pct:.1f}%** | "
-                f"Threshold: "
-                f"**{threshold_pct:.1f}%** | "
-                f"Verdict: **{verdict}**"
+                f'<div style="background:#333;'
+                f'border-radius:4px;height:20px;">'
+                f'<div style="background:{bar_color};'
+                f'width:{min(score_pct, 100):.1f}%;'
+                f'height:20px;border-radius:4px;">'
+                f'</div></div>'
+                f'<p style="margin-top:8px;">'
+                f'Score: <strong>{score_pct:.1f}%'
+                f'</strong> | Threshold: '
+                f'<strong>{threshold_pct:.1f}%'
+                f'</strong> | Verdict: '
+                f'<strong>{verdict}</strong></p>',
+                unsafe_allow_html=True
             )
 
 # =============================================
