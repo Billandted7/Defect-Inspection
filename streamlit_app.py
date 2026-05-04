@@ -82,8 +82,10 @@ if "last_filename" not in st.session_state:
     st.session_state.last_filename = None
 if "selected_sample" not in st.session_state:
     st.session_state.selected_sample = None
+if "last_result" not in st.session_state:
+    st.session_state.last_result = None
 
-THRESHOLD = 0.577
+THRESHOLD = 0.48
 
 st.sidebar.title("Visual Inspection System")
 page = st.sidebar.radio(
@@ -288,8 +290,38 @@ if page == "Inspect Component":
         st.success("System ready for inspection")
         st.markdown("---")
 
+# Show previous result at top if exists
+        if st.session_state.get("last_result"):
+            r = st.session_state.last_result
+            st.markdown("### Last Inspection Result")
+            res_c1, res_c2 = st.columns(2)
+            with res_c1:
+                if r["verdict"] == "PASS":
+                    st.markdown(
+                        '<div class="pass-badge">'
+                        'PASS<br>No Defect Detected'
+                        '</div>',
+                        unsafe_allow_html=True)
+                else:
+                    st.markdown(
+                        '<div class="fail-badge">'
+                        f'FAIL<br>{r["defect_type"]}'
+                        '</div>',
+                        unsafe_allow_html=True)
+            with res_c2:
+                st.metric(
+                    "Anomaly Score",
+                    f'{r["score"]*100:.1f}%')
+                if r["verdict"] == "FAIL":
+                    st.image(
+                        r["overlay"],
+                        use_container_width=True)
+            st.markdown("---")
+
+        st.markdown(
+            "### Select or Upload a Component Image")
         st.markdown("### Select or Upload a Component Image")
-        
+
         sample_folder = Path("sample_images")
         selected_img_bytes = None
         selected_img_name = None
@@ -465,6 +497,18 @@ if page == "Inspect Component":
             score_pct = score * 100
             threshold_pct = THRESHOLD * 100
 
+# Cache result for display at top
+            if verdict == "FAIL":
+                overlay = make_overlay(
+                    img_resized, anomaly_map)
+            else:
+                overlay = None
+            st.session_state.last_result = {
+                "verdict": verdict,
+                "score": score,
+                "defect_type": defect_type,
+                "overlay": overlay,
+            }
             if img_name != \
                     st.session_state.last_filename:
                 st.session_state.inspection_log.append(
