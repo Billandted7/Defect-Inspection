@@ -74,6 +74,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# =============================================
+# SESSION STATE
+# =============================================
 if "model_trained" not in st.session_state:
     st.session_state.model_trained = False
 if "inspection_log" not in st.session_state:
@@ -86,9 +89,14 @@ if "last_result" not in st.session_state:
     st.session_state.last_result = None
 if "inspecting" not in st.session_state:
     st.session_state.inspecting = False
+if "gallery_index" not in st.session_state:
+    st.session_state.gallery_index = 0
 
 THRESHOLD = 0.42
 
+# =============================================
+# SIDEBAR
+# =============================================
 st.sidebar.title("Visual Inspection System")
 page = st.sidebar.radio(
     "Navigate",
@@ -105,7 +113,7 @@ if st.session_state.model_trained:
         "**Backbone:** WideResNet50  \n"
         "**Image AUROC:** 0.9976  \n"
         "**Training set:** 220 good parts  \n"
-        "**Threshold:** 0.577 (calibrated)  \n"
+        "**Threshold:** 0.42 (calibrated)  \n"
         "**Good part pass rate:** 95%  \n"
         "**Defect detection rate:** 96%"
     )
@@ -115,10 +123,13 @@ else:
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     "Built by Rebecca Moroney  \n"
-    "AI interface within Quality Engineering"
+    "AI Interface within Quality Engineering"
 )
 
 
+# =============================================
+# CACHED INFERENCE
+# =============================================
 @st.cache_data
 def run_inference_cached(img_bytes):
     os.environ["TRUST_REMOTE_CODE"] = "1"
@@ -168,6 +179,9 @@ def run_inference_cached(img_bytes):
     return score, img_resized, anomaly_map
 
 
+# =============================================
+# DEFECT CLASSIFICATION
+# =============================================
 def classify_defect(anomaly_map, score):
     if score < THRESHOLD:
         return "No defect", 0.0
@@ -197,8 +211,6 @@ def classify_defect(anomaly_map, score):
         return "Scratch", min(
             0.95, 0.65 + aspect * 0.02)
     elif defect_ratio > 0.40:
-        # Very large anomaly covering most of surface
-        # likely orientation or contamination
         return "Colour / Surface contamination", min(
             0.90, 0.5 + defect_ratio)
     elif defect_ratio > 0.20 and not is_edge:
@@ -214,6 +226,9 @@ def classify_defect(anomaly_map, score):
         return "Surface anomaly", score * 0.7
 
 
+# =============================================
+# VISUALS
+# =============================================
 def make_overlay(img_rgb, anomaly_map):
     heatmap = cv2.applyColorMap(
         (anomaly_map * 255).astype(np.uint8),
@@ -264,6 +279,9 @@ def make_zoomed_mask(img_rgb, anomaly_map):
     return contour_img, zoom
 
 
+# =============================================
+# PAGE 1: INSPECT
+# =============================================
 if page == "Inspect Component":
 
     st.title("Automated Visual Inspection System")
@@ -284,7 +302,7 @@ if page == "Inspect Component":
         st.stop()
 
     if not st.session_state.model_trained:
-        st.info("Click below to initialise the system.")
+        st.info("Click below to initialise.")
         if st.button(
                 "Initialise Inspection System",
                 type="primary",
@@ -297,26 +315,23 @@ if page == "Inspect Component":
         st.success("System ready for inspection")
         st.markdown("---")
 
-        st.markdown(
-            "### Select or Upload a Component Image")
-        st.markdown("### Select or Upload a Component Image")
-
+        # =========================================
+        # SAMPLE IMAGE GALLERY
+        # =========================================
         sample_folder = Path("sample_images")
         selected_img_bytes = None
         selected_img_name = None
-        img_bytes_pending = None
 
-        # If inspecting flag is set, load the
-        # selected sample immediately
-        if st.session_state.get("inspecting") \
-                and st.session_state.get(
-                    "selected_sample"):
-            sample_path = Path("sample_images") / \
-                st.session_state["selected_sample"]
-            if sample_path.exists():
-                with open(sample_path, "rb") as f:
+        # If inspecting flag is set load selected
+        # sample immediately before gallery renders
+        if st.session_state.inspecting \
+                and st.session_state.selected_sample:
+            sp = Path("sample_images") / \
+                st.session_state.selected_sample
+            if sp.exists():
+                with open(sp, "rb") as f:
                     selected_img_bytes = f.read()
-                selected_img_name = sample_path.name
+                selected_img_name = sp.name
 
         if sample_folder.exists():
             sample_files = sorted(
@@ -324,20 +339,17 @@ if page == "Inspect Component":
                 list(sample_folder.glob("*.jpg")))
 
             if sample_files:
+                # Collapse gallery once inspecting
+                # or once a result exists
+                show_gallery = (
+                    not st.session_state.inspecting
+                    and st.session_state.last_result
+                    is None
+                )
 
-                # Only show gallery if no result yet
-                show_gallery = not st.session_state.get(
-                    "inspecting", False
-                ) and st.session_state.get(
-                    "last_result") is None
-
-                if "gallery_index" not in \
-                        st.session_state:
-                    st.session_state.gallery_index = 0
-
-                idx = st.session_state.gallery_index
                 idx = max(0, min(
-                    idx, len(sample_files) - 1))
+                    st.session_state.gallery_index,
+                    len(sample_files) - 1))
 
                 with st.expander(
                         "Browse Sample Images",
@@ -346,144 +358,142 @@ if page == "Inspect Component":
                     st.markdown(
                         "Each image is a real metal "
                         "nut photograph. Use the "
-                        "arrows to browse, then click "
-                        "Inspect to analyse it."
+                        "arrows to browse then click "
+                        "Inspect This Image."
                     )
 
-                    # Navigation row
-                    nav1, nav2, nav3, nav4, nav5 = \
+                    # Navigation
+                    n1, n2, n3, n4, n5 = \
                         st.columns([1, 1, 3, 1, 1])
 
-                    with nav1:
+                    with n1:
                         if st.button(
                                 "<<",
-                                use_container_width=True,
-                                key="first"):
+                                key="first",
+                                use_container_width=True):
                             st.session_state\
                                 .gallery_index = 0
+                            st.session_state\
+                                .last_result = None
                             st.rerun()
 
-                    with nav2:
+                    with n2:
                         if st.button(
                                 "<",
-                                use_container_width=True,
-                                key="prev"):
+                                key="prev",
+                                use_container_width=True):
                             st.session_state\
                                 .gallery_index = max(
                                     0, idx - 1)
+                            st.session_state\
+                                .last_result = None
                             st.rerun()
 
-                    with nav3:
+                    with n3:
                         st.markdown(
                             f"<p style='text-align:"
-                            f"center;padding-top:8px;'>"
+                            f"center;padding-top:8px'>"
                             f"Image {idx + 1} of "
                             f"{len(sample_files)}"
                             f"</p>",
-                            unsafe_allow_html=True
-                        )
+                            unsafe_allow_html=True)
 
-                    with nav4:
+                    with n4:
                         if st.button(
                                 ">",
-                                use_container_width=True,
-                                key="next"):
+                                key="next",
+                                use_container_width=True):
                             st.session_state\
                                 .gallery_index = min(
                                     len(sample_files)
                                     - 1, idx + 1)
+                            st.session_state\
+                                .last_result = None
                             st.rerun()
 
-                    with nav5:
+                    with n5:
                         if st.button(
                                 ">>",
-                                use_container_width=True,
-                                key="last"):
+                                key="last",
+                                use_container_width=True):
                             st.session_state\
                                 .gallery_index = \
                                 len(sample_files) - 1
+                            st.session_state\
+                                .last_result = None
                             st.rerun()
 
-                    # Show current image
                     current_file = sample_files[idx]
                     with open(
                             current_file, "rb") as f:
                         current_bytes = f.read()
 
-                    img_array = np.frombuffer(
+                    img_arr = np.frombuffer(
                         current_bytes, np.uint8)
                     img_bgr = cv2.imdecode(
-                        img_array, cv2.IMREAD_COLOR)
-                    img_rgb = cv2.cvtColor(
+                        img_arr, cv2.IMREAD_COLOR)
+                    img_rgb_prev = cv2.cvtColor(
                         img_bgr, cv2.COLOR_BGR2RGB)
 
-                    col_left, col_img, col_right = \
-                        st.columns([1, 4, 1])
-                    with col_img:
+                    cl, cm, cr = st.columns([1, 4, 1])
+                    with cm:
                         st.image(
-                            img_rgb,
+                            img_rgb_prev,
                             use_container_width=True,
-                            caption=current_file.stem
-                        )
-if st.button(
+                            caption=current_file.stem)
+                        if st.button(
                                 "Inspect This Image",
                                 type="primary",
-                                use_container_width=True,
-                                key="inspect_gallery"):
-                            selected_img_bytes = \
-                                current_bytes
-                            selected_img_name = \
+                                key="inspect_gallery",
+                                use_container_width=True):
+                            st.session_state\
+                                .selected_sample = \
                                 current_file.name
-                            st.session_state[
-                                "selected_sample"
-                            ] = current_file.name
-                            st.session_state[
-                                "inspecting"
-                            ] = True
+                            st.session_state\
+                                .inspecting = True
+                            st.session_state\
+                                .last_result = None
                             st.rerun()
 
-st.markdown("---")
-st.markdown("#### Or Upload Your Own Image")
-uploaded = st.file_uploader(
+        st.markdown("---")
+        st.markdown("#### Or Upload Your Own Image")
+        uploaded = st.file_uploader(
             "Choose image (PNG or JPG)",
             type=["png", "jpg", "jpeg"],
-            help=(
-                "Upload a metal nut image. "
-                "The model was trained on this "
-                "component category specifically."
-            )
+            help="Upload a metal nut image."
         )
 
-        # Determine which image to process
-if uploaded is not None:
+        # Determine image to process
+        if uploaded is not None:
             img_bytes = uploaded.getvalue()
             img_name = uploaded.name
-elif selected_img_bytes is not None:
+        elif selected_img_bytes is not None:
             img_bytes = selected_img_bytes
             img_name = selected_img_name
-elif "selected_sample" in st.session_state \
-                and st.session_state[
-                    "selected_sample"] is not None:
-            sample_path = Path("sample_images") / \
-                st.session_state["selected_sample"]
-            if sample_path.exists():
-                with open(sample_path, "rb") as f:
+        elif st.session_state.selected_sample \
+                is not None:
+            sp = Path("sample_images") / \
+                st.session_state.selected_sample
+            if sp.exists():
+                with open(sp, "rb") as f:
                     img_bytes = f.read()
-                img_name = sample_path.name
+                img_name = sp.name
             else:
                 img_bytes = None
                 img_name = None
-else:
+        else:
             img_bytes = None
             img_name = None
 
-if img_bytes is not None:
+        if img_bytes is not None:
 
             with st.spinner(
                     "Running PatchCore inference..."):
                 score, img_resized, anomaly_map = \
                     run_inference_cached(img_bytes)
-            st.session_state["inspecting"] = False
+
+            # Inference done — reset inspecting flag
+            st.session_state.inspecting = False
 
             verdict = "PASS" \
                 if score <= THRESHOLD else "FAIL"
@@ -492,38 +502,37 @@ if img_bytes is not None:
             score_pct = score * 100
             threshold_pct = THRESHOLD * 100
 
-# Cache result for display at top
-            if verdict == "FAIL":
-                overlay = make_overlay(
-                    img_resized, anomaly_map)
-            else:
-                overlay = None
-            st.session_state.last_result = {
-                "verdict": verdict,
-                "score": score,
-                "defect_type": defect_type,
-                "overlay": overlay,
-            }
+            # Log only if new image
             if img_name != \
                     st.session_state.last_filename:
-                st.session_state.inspection_log.append(
-                    {
-                        "timestamp": pd.Timestamp.now()
-                        .strftime("%Y-%m-%d %H:%M:%S"),
+                st.session_state.inspection_log\
+                    .append({
+                        "timestamp": pd.Timestamp
+                        .now().strftime(
+                            "%Y-%m-%d %H:%M:%S"),
                         "filename": img_name,
                         "anomaly_score": round(
                             score, 4),
                         "threshold": THRESHOLD,
                         "verdict": verdict,
                         "defect_type": defect_type
-                        if verdict == "FAIL" else "—",
+                        if verdict == "FAIL"
+                        else "—",
                     })
                 st.session_state.last_filename = \
                     img_name
                 pd.DataFrame(
                     st.session_state.inspection_log
                 ).to_csv(
-                    "inspection_log.csv", index=False)
+                    "inspection_log.csv",
+                    index=False)
+
+            # Store last result
+            st.session_state.last_result = {
+                "verdict": verdict,
+                "score": score,
+                "defect_type": defect_type,
+            }
 
             st.markdown("---")
             st.markdown("### Inspection Results")
@@ -534,8 +543,7 @@ if img_bytes is not None:
                 if verdict == "PASS":
                     st.markdown(
                         '<div class="pass-badge">'
-                        'PASS<br>'
-                        'No Defect Detected'
+                        'PASS<br>No Defect Detected'
                         '</div>',
                         unsafe_allow_html=True)
                 else:
@@ -550,14 +558,15 @@ if img_bytes is not None:
                 st.metric(
                     "Anomaly Score",
                     f"{score_pct:.1f}%",
-                    delta=f"{delta_val:.1f}% vs threshold"
-                )
+                    delta=(
+                        f"{delta_val:.1f}% "
+                        f"vs threshold"))
                 if verdict == "FAIL":
                     st.markdown(
-                        f"**Defect:** {defect_type}  \n"
+                        f"**Defect:** "
+                        f"{defect_type}  \n"
                         f"**Confidence:** "
-                        f"{confidence*100:.0f}%"
-                    )
+                        f"{confidence*100:.0f}%")
 
             with c3:
                 total = len(
@@ -566,7 +575,8 @@ if img_bytes is not None:
                     1 for r in
                     st.session_state.inspection_log
                     if r["verdict"] == "PASS")
-                st.metric("Session Inspections", total)
+                st.metric(
+                    "Session Inspections", total)
                 st.metric(
                     "Pass Rate",
                     f"{passed/total*100:.0f}%"
@@ -583,7 +593,7 @@ if img_bytes is not None:
                         img_resized,
                         use_container_width=True)
                     st.success(
-                        "Component passed inspection. "
+                        "Component passed. "
                         "No anomalies detected.")
             else:
                 overlay = make_overlay(
@@ -592,7 +602,6 @@ if img_bytes is not None:
                     img_resized, anomaly_map)
 
                 col1, col2 = st.columns(2)
-
                 with col1:
                     st.markdown("**Heatmap Overlay**")
                     st.image(
@@ -601,7 +610,6 @@ if img_bytes is not None:
                     st.caption(
                         "Red = high anomaly. "
                         "Blue = normal.")
-
                 with col2:
                     st.markdown(
                         "**Defect Location — Zoomed**")
@@ -614,7 +622,7 @@ if img_bytes is not None:
 
                 st.markdown("---")
                 st.error(
-                    f"Component failed inspection. "
+                    f"Component failed. "
                     f"Detected: **{defect_type}**. "
                     f"Do not ship.")
 
@@ -636,8 +644,13 @@ if img_bytes is not None:
                 f'</strong> | Verdict: '
                 f'<strong>{verdict}</strong></p>'
             )
-            st.markdown(bar_html, unsafe_allow_html=True)
+            st.markdown(
+                bar_html, unsafe_allow_html=True)
 
+
+# =============================================
+# PAGE 2: DASHBOARD
+# =============================================
 elif page == "Dashboard":
 
     st.title("Inspection Dashboard")
@@ -666,7 +679,6 @@ elif page == "Dashboard":
         c4.metric("Pass Rate", f"{pass_rate:.0f}%")
 
         st.markdown("---")
-
         col1, col2 = st.columns(2)
 
         with col1:
@@ -735,6 +747,10 @@ elif page == "Dashboard":
             "text/csv",
             use_container_width=True)
 
+
+# =============================================
+# PAGE 3: ABOUT
+# =============================================
 elif page == "About":
 
     st.title("About This System")
@@ -756,7 +772,7 @@ defective parts.
 |--------|-------|
 | Image AUROC | **0.9976** |
 | Pixel AUROC | **0.9868** |
-| Image F1 Score | **0.9838** |
+
 
 ---
 
@@ -767,9 +783,9 @@ defective parts.
 | Good parts — min score | 0.2948 |
 | Good parts — max score | 0.5952 |
 | Good parts — mean score | 0.4244 |
-| **Calibrated threshold** | **0.5770** |
-| Good parts passing | 95% (21/22) |
-| Defects caught | 96% (89/93) |
+| **Calibrated threshold** | **0.4200** |
+| Good parts passing | 95% |
+| Defects caught | 96% |
 
 ---
 
