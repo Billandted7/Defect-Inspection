@@ -295,34 +295,6 @@ if page == "Inspect Component":
         st.success("System ready for inspection")
         st.markdown("---")
 
-# Show previous result at top if exists
-        if st.session_state.get("last_result"):
-            r = st.session_state.last_result
-            st.markdown("### Last Inspection Result")
-            res_c1, res_c2 = st.columns(2)
-            with res_c1:
-                if r["verdict"] == "PASS":
-                    st.markdown(
-                        '<div class="pass-badge">'
-                        'PASS<br>No Defect Detected'
-                        '</div>',
-                        unsafe_allow_html=True)
-                else:
-                    st.markdown(
-                        '<div class="fail-badge">'
-                        f'FAIL<br>{r["defect_type"]}'
-                        '</div>',
-                        unsafe_allow_html=True)
-            with res_c2:
-                st.metric(
-                    "Anomaly Score",
-                    f'{r["score"]*100:.1f}%')
-                if r["verdict"] == "FAIL":
-                    st.image(
-                        r["overlay"],
-                        use_container_width=True)
-            st.markdown("---")
-
         st.markdown(
             "### Select or Upload a Component Image")
         st.markdown("### Select or Upload a Component Image")
@@ -342,8 +314,7 @@ if page == "Inspect Component":
                 # Only show gallery if no result yet
                 show_gallery = (
                     st.session_state.get(
-                        "selected_sample") is None
-                    and img_bytes_pending is None
+                        "last_result") is None
                 )
 
                 if "gallery_index" not in \
