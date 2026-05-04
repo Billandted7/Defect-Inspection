@@ -210,11 +210,11 @@ def classify_defect(anomaly_map, score):
     if aspect > 3.5:
         return "Scratch", min(
             0.95, 0.65 + aspect * 0.02)
-    elif defect_ratio > 0.40:
-        return "Colour / Surface contamination", min(
-            0.90, 0.5 + defect_ratio)
-    elif defect_ratio > 0.20 and not is_edge:
+    elif defect_ratio > 0.30 and aspect < 2.0:
         return "Flip / Orientation error", min(
+            0.95, 0.6 + defect_ratio)
+    elif defect_ratio > 0.20:
+        return "Scratch", min(
             0.95, 0.6 + defect_ratio)
     elif defect_ratio > 0.10 and is_edge:
         return "Bent / Deformation", min(
@@ -224,7 +224,6 @@ def classify_defect(anomaly_map, score):
             0.90, 0.5 + defect_ratio * 3)
     else:
         return "Surface anomaly", score * 0.7
-
 
 # =============================================
 # VISUALS
