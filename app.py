@@ -194,6 +194,11 @@ def classify_defect(anomaly_map, score):
     if aspect > 3.5:
         return "Scratch", min(
             0.95, 0.65 + aspect * 0.02)
+    elif defect_ratio > 0.40:
+        # Very large anomaly covering most of surface
+        # likely orientation or contamination
+        return "Colour / Surface contamination", min(
+            0.90, 0.5 + defect_ratio)
     elif defect_ratio > 0.20 and not is_edge:
         return "Flip / Orientation error", min(
             0.95, 0.6 + defect_ratio)
@@ -225,7 +230,7 @@ def make_overlay(img_rgb, anomaly_map):
 
 def make_zoomed_mask(img_rgb, anomaly_map):
     pred_mask = (
-        anomaly_map > 0.6).astype(np.uint8) * 255
+        anomaly_map > 0.75).astype(np.uint8) * 255
     contours, _ = cv2.findContours(
         pred_mask,
         cv2.RETR_EXTERNAL,
