@@ -85,7 +85,7 @@ if "selected_sample" not in st.session_state:
 if "last_result" not in st.session_state:
     st.session_state.last_result = None
 
-THRESHOLD = 0.48
+THRESHOLD = 0.42
 
 st.sidebar.title("Visual Inspection System")
 page = st.sidebar.radio(
