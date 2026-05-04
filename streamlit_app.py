@@ -499,6 +499,11 @@ if page == "Inspect Component":
                 if score <= THRESHOLD else "FAIL"
             defect_type, confidence = \
                 classify_defect(anomaly_map, score)
+            # Orientation variance is not a physical
+            # defect — override to PASS
+            if defect_type == "Flip / Orientation error":
+                verdict = "PASS"
+                defect_type = "No defect"
             score_pct = score * 100
             threshold_pct = THRESHOLD * 100
 
