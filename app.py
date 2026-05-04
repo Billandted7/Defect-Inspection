@@ -306,6 +306,18 @@ if page == "Inspect Component":
         selected_img_name = None
         img_bytes_pending = None
 
+        # If inspecting flag is set, load the
+        # selected sample immediately
+        if st.session_state.get("inspecting") \
+                and st.session_state.get(
+                    "selected_sample"):
+            sample_path = Path("sample_images") / \
+                st.session_state["selected_sample"]
+            if sample_path.exists():
+                with open(sample_path, "rb") as f:
+                    selected_img_bytes = f.read()
+                selected_img_name = sample_path.name
+
         if sample_folder.exists():
             sample_files = sorted(
                 list(sample_folder.glob("*.png")) +
