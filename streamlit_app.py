@@ -84,6 +84,8 @@ if "selected_sample" not in st.session_state:
     st.session_state.selected_sample = None
 if "last_result" not in st.session_state:
     st.session_state.last_result = None
+if "inspecting" not in st.session_state:
+    st.session_state.inspecting = False
 
 THRESHOLD = 0.42
 
@@ -312,10 +314,10 @@ if page == "Inspect Component":
             if sample_files:
 
                 # Only show gallery if no result yet
-                show_gallery = (
-                    st.session_state.get(
-                        "last_result") is None
-                )
+                show_gallery = not st.session_state.get(
+                    "inspecting", False
+                ) and st.session_state.get(
+                    "last_result") is None
 
                 if "gallery_index" not in \
                         st.session_state:
@@ -411,7 +413,7 @@ if page == "Inspect Component":
                             use_container_width=True,
                             caption=current_file.stem
                         )
-                        if st.button(
+if st.button(
                                 "Inspect This Image",
                                 type="primary",
                                 use_container_width=True,
@@ -423,10 +425,14 @@ if page == "Inspect Component":
                             st.session_state[
                                 "selected_sample"
                             ] = current_file.name
+                            st.session_state[
+                                "inspecting"
+                            ] = True
+                            st.rerun()
 
-        st.markdown("---")
-        st.markdown("#### Or Upload Your Own Image")
-        uploaded = st.file_uploader(
+st.markdown("---")
+st.markdown("#### Or Upload Your Own Image")
+uploaded = st.file_uploader(
             "Choose image (PNG or JPG)",
             type=["png", "jpg", "jpeg"],
             help=(
@@ -437,13 +443,13 @@ if page == "Inspect Component":
         )
 
         # Determine which image to process
-        if uploaded is not None:
+if uploaded is not None:
             img_bytes = uploaded.getvalue()
             img_name = uploaded.name
-        elif selected_img_bytes is not None:
+elif selected_img_bytes is not None:
             img_bytes = selected_img_bytes
             img_name = selected_img_name
-        elif "selected_sample" in st.session_state \
+elif "selected_sample" in st.session_state \
                 and st.session_state[
                     "selected_sample"] is not None:
             sample_path = Path("sample_images") / \
@@ -455,16 +461,17 @@ if page == "Inspect Component":
             else:
                 img_bytes = None
                 img_name = None
-        else:
+else:
             img_bytes = None
             img_name = None
 
-        if img_bytes is not None:
+if img_bytes is not None:
 
             with st.spinner(
                     "Running PatchCore inference..."):
                 score, img_resized, anomaly_map = \
                     run_inference_cached(img_bytes)
+            st.session_state["inspecting"] = False
 
             verdict = "PASS" \
                 if score <= THRESHOLD else "FAIL"
