@@ -47,139 +47,275 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* ── Global ── */
-    .stApp {
-        background-color: #f8f9fa;
-    }
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
     }
 
-    /* ── Header ── */
-    .site-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 0 1.5rem 0;
-        border-bottom: 2px solid #e9ecef;
-        margin-bottom: 1.5rem;
+    .stApp {
+        background-color: #f0f2f6;
     }
-    .site-title {
-        font-size: 22px;
-        font-weight: 700;
-        color: #1a1a2e;
-        letter-spacing: -0.3px;
-        margin: 0;
+
+    .block-container {
+        padding-top: 0 !important;
+        padding-bottom: 2rem;
+        max-width: 780px;
     }
-    .site-subtitle {
-        font-size: 13px;
-        color: #6c757d;
-        margin: 2px 0 0 0;
+
+    /* ── Hero ── */
+    .hero {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+        border-radius: 0 0 24px 24px;
+        padding: 40px 36px 36px 36px;
+        margin: -1rem -1rem 24px -1rem;
+        color: white;
     }
-    .status-pill {
-        background: #d4edda;
-        color: #155724;
+    .hero-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.25);
         border-radius: 20px;
         padding: 4px 14px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 600;
-    }
-
-    /* ── Cards ── */
-    .card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #a8d8ea;
         margin-bottom: 16px;
     }
-    .card-label {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1px;
+    .hero h1 {
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0 0 12px 0;
+        line-height: 1.15;
+        color: white;
+    }
+    .hero p {
+        font-size: 14px;
+        color: rgba(255,255,255,0.75);
+        line-height: 1.7;
+        margin: 0 0 24px 0;
+        max-width: 560px;
+    }
+    .hero-stats {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .hero-stat {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        padding: 10px 16px;
+        text-align: center;
+        min-width: 100px;
+    }
+    .hero-stat-val {
+        font-size: 20px;
+        font-weight: 800;
+        color: #69f0ae;
+        display: block;
+        line-height: 1;
+    }
+    .hero-stat-label {
+        font-size: 10px;
+        color: rgba(255,255,255,0.6);
         text-transform: uppercase;
-        color: #6c757d;
-        margin-bottom: 8px;
-    }
-
-    /* ── Verdict badges ── */
-    .pass-badge {
-        background: #d4edda;
-        color: #155724;
-        border: 1.5px solid #c3e6cb;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        font-size: 20px;
-        font-weight: 700;
-    }
-    .fail-badge {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1.5px solid #f5c6cb;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        font-size: 20px;
-        font-weight: 700;
-    }
-    .verdict-sub {
-        font-size: 12px;
-        font-weight: 400;
+        letter-spacing: 0.8px;
         margin-top: 4px;
         display: block;
     }
 
-    /* ── Score bar ── */
+    /* ── How to use ── */
+    .how-to {
+        background: white;
+        border-radius: 14px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .how-to-title {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #6c757d;
+        margin-bottom: 14px;
+    }
+    .how-to-steps {
+        display: flex;
+        gap: 0;
+    }
+    .how-step {
+        flex: 1;
+        text-align: center;
+        padding: 0 8px;
+        position: relative;
+    }
+    .how-step:not(:last-child)::after {
+        content: '→';
+        position: absolute;
+        right: -6px;
+        top: 12px;
+        color: #dee2e6;
+        font-size: 16px;
+    }
+    .step-num {
+        width: 28px;
+        height: 28px;
+        background: #1a1a2e;
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 6px;
+    }
+    .step-text {
+        font-size: 11px;
+        color: #495057;
+        line-height: 1.4;
+    }
+
+    /* ── Section headers ── */
+    .section-header {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: #6c757d;
+        margin: 0 0 12px 0;
+    }
+
+    /* ── Gallery card ── */
+    .gallery-card {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        margin-bottom: 16px;
+    }
+    .gallery-counter {
+        text-align: center;
+        font-size: 12px;
+        color: #adb5bd;
+        padding-top: 5px;
+    }
+
+    /* ── Upload area ── */
+    .upload-card {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        margin-bottom: 20px;
+    }
+    .divider-text {
+        text-align: center;
+        color: #adb5bd;
+        font-size: 12px;
+        margin: 4px 0 16px 0;
+        position: relative;
+    }
+    .divider-text::before,
+    .divider-text::after {
+        content: '';
+        display: inline-block;
+        width: 30%;
+        height: 1px;
+        background: #dee2e6;
+        vertical-align: middle;
+        margin: 0 10px;
+    }
+
+    /* ── Result cards ── */
+    .pass-badge {
+        background: linear-gradient(
+            135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border: 1.5px solid #b1dfbb;
+        border-radius: 12px;
+        padding: 18px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 800;
+    }
+    .fail-badge {
+        background: linear-gradient(
+            135deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        border: 1.5px solid #f1aeb5;
+        border-radius: 12px;
+        padding: 18px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 800;
+    }
+    .verdict-sub {
+        font-size: 12px;
+        font-weight: 500;
+        margin-top: 4px;
+        display: block;
+        opacity: 0.8;
+    }
+    .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        height: 100%;
+    }
+    .metric-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #adb5bd;
+        margin-bottom: 6px;
+    }
+    .metric-value {
+        font-size: 26px;
+        font-weight: 800;
+        color: #1a1a2e;
+        line-height: 1;
+    }
+    .metric-sub {
+        font-size: 11px;
+        color: #adb5bd;
+        margin-top: 4px;
+    }
     .score-track {
         background: #e9ecef;
         border-radius: 6px;
-        height: 10px;
+        height: 8px;
         margin: 8px 0 4px 0;
         overflow: hidden;
     }
     .score-fill-pass {
-        background: #28a745;
-        height: 10px;
+        background: linear-gradient(
+            90deg, #28a745, #20c997);
+        height: 8px;
         border-radius: 6px;
     }
     .score-fill-fail {
-        background: #dc3545;
-        height: 10px;
+        background: linear-gradient(
+            90deg, #fd7e14, #dc3545);
+        height: 8px;
         border-radius: 6px;
     }
-    .score-label {
-        font-size: 12px;
-        color: #6c757d;
-    }
 
-    /* ── Stat chips ── */
-    .stat-chip {
+    /* ── Nav ── */
+    .nav-bar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
         background: white;
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 12px 16px;
-        text-align: center;
-    }
-    .stat-value {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1a1a2e;
-        line-height: 1.1;
-    }
-    .stat-label {
-        font-size: 11px;
-        color: #6c757d;
-        margin-top: 2px;
-    }
-
-    /* ── Gallery nav ── */
-    .gallery-counter {
-        text-align: center;
-        font-size: 13px;
-        color: #6c757d;
-        padding-top: 6px;
+        border-radius: 12px;
+        padding: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
     /* ── Suppress animations ── */
@@ -187,10 +323,9 @@ st.markdown("""
         animation-duration: 0s !important;
         transition-duration: 0s !important;
     }
-
-    /* ── Hide default streamlit footer ── */
     footer {visibility: hidden;}
     #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -209,6 +344,8 @@ if "inspecting" not in st.session_state:
     st.session_state.inspecting = False
 if "gallery_index" not in st.session_state:
     st.session_state.gallery_index = 0
+if "page" not in st.session_state:
+    st.session_state.page = "Inspect"
 
 THRESHOLD = 0.50
 
@@ -356,38 +493,79 @@ def make_zoomed_mask(img_rgb, anomaly_map):
 
 
 # =============================================
-# NAVIGATION
+# HERO SECTION
 # =============================================
-nav1, nav2, nav3 = st.columns([3, 1, 1])
-with nav1:
-    st.markdown(
-        '<p class="site-title">🔍 Visual '
-        'Inspection System</p>'
-        '<p class="site-subtitle">AI-powered '
-        'defect detection · PatchCore · '
-        'WideResNet50</p>',
-        unsafe_allow_html=True)
-with nav3:
-    page = st.selectbox(
-        "page",
-        ["Inspect", "Dashboard", "About"],
-        label_visibility="collapsed")
+st.markdown("""
+<div class="hero">
+    <div class="hero-badge">
+        Portfolio Project · Quality Engineering
+    </div>
+    <h1>AI Visual Inspection System</h1>
+    <p>
+        This tool uses a PatchCore deep learning
+        model to automatically detect defects in
+        manufactured components. It was trained on
+        220 photographs of defect-free metal nuts
+        and can detect scratches, surface
+        contamination, and deformation with
+        99.76% accuracy — without ever seeing a
+        single defective part during training.
+        <br><br>
+        <strong style="color:white;">
+        To get started:</strong>
+        browse the sample images below using the
+        arrows, then click
+        <em>Inspect This Image</em> to run the AI
+        analysis. Results appear instantly. Use the
+        navigation above to view your inspection
+        history on the Dashboard, or learn more
+        about how the model works on the About page.
+    </p>
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <span class="hero-stat-val">99.76%</span>
+            <span class="hero-stat-label">
+                Image AUROC</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-val">220</span>
+            <span class="hero-stat-label">
+                Training Images</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-val">96%</span>
+            <span class="hero-stat-label">
+                Defects Caught</span>
+        </div>
+        <div class="hero-stat">
+            <span class="hero-stat-val">95%</span>
+            <span class="hero-stat-label">
+                Good Parts Passed</span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# =============================================
+# NAV TABS
+# =============================================
+t1, t2, t3 = st.tabs(
+    ["🔍 Inspect", "📊 Dashboard", "ℹ️ About"])
 
 
 # =============================================
-# PAGE: INSPECT
+# TAB 1: INSPECT
 # =============================================
-if page == "Inspect":
+with t1:
 
     model_path = Path(
         "exported_model/weights/torch/model.pt")
     if not model_path.exists():
         st.error(
-            "Model loading — please wait "
-            "30 seconds and refresh.")
+            "Model loading — please refresh "
+            "in 30 seconds.")
         st.stop()
 
-    # ── Gallery ──────────────────────────────
     sample_folder = Path("sample_images")
     selected_img_bytes = None
     selected_img_name = None
@@ -401,6 +579,7 @@ if page == "Inspect":
                 selected_img_bytes = f.read()
             selected_img_name = sp.name
 
+    # ── Gallery ──────────────────────────────
     if sample_folder.exists():
         sample_files = sorted(
             list(sample_folder.glob("*.png")) +
@@ -416,101 +595,124 @@ if page == "Inspect":
                 st.session_state.gallery_index,
                 len(sample_files) - 1))
 
-            with st.expander(
-                    "Sample Images — click any to inspect",
-                    expanded=show_gallery):
+            st.markdown(
+                '<p class="section-header">'
+                'Sample Components</p>',
+                unsafe_allow_html=True)
 
-                n1, n2, n3, n4, n5 = \
-                    st.columns([1, 1, 3, 1, 1])
-                with n1:
-                    if st.button(
-                            "⏮", key="first",
-                            use_container_width=True):
-                        st.session_state\
-                            .gallery_index = 0
-                        st.session_state\
-                            .last_result = None
-                        st.rerun()
-                with n2:
-                    if st.button(
-                            "◀", key="prev",
-                            use_container_width=True):
-                        st.session_state\
-                            .gallery_index = max(
-                                0, idx - 1)
-                        st.session_state\
-                            .last_result = None
-                        st.rerun()
-                with n3:
-                    st.markdown(
-                        f'<p class="gallery-counter">'
-                        f'Image {idx + 1} of '
-                        f'{len(sample_files)}</p>',
-                        unsafe_allow_html=True)
-                with n4:
-                    if st.button(
-                            "▶", key="next",
-                            use_container_width=True):
-                        st.session_state\
-                            .gallery_index = min(
-                                len(sample_files)-1,
-                                idx + 1)
-                        st.session_state\
-                            .last_result = None
-                        st.rerun()
-                with n5:
-                    if st.button(
-                            "⏭", key="last",
-                            use_container_width=True):
-                        st.session_state\
-                            .gallery_index = \
-                            len(sample_files) - 1
-                        st.session_state\
-                            .last_result = None
-                        st.rerun()
+            with st.container():
+                st.markdown(
+                    '<div class="gallery-card">',
+                    unsafe_allow_html=True)
 
-                current_file = sample_files[idx]
-                with open(current_file, "rb") as f:
-                    current_bytes = f.read()
-                arr = np.frombuffer(
-                    current_bytes, np.uint8)
-                prev = cv2.cvtColor(
-                    cv2.imdecode(
-                        arr, cv2.IMREAD_COLOR),
-                    cv2.COLOR_BGR2RGB)
+                with st.expander(
+                        "Browse images — use arrows "
+                        "to navigate, then click "
+                        "Inspect",
+                        expanded=show_gallery):
 
-                cl, cm, cr = st.columns([1, 4, 1])
-                with cm:
-                    st.image(
-                        prev,
-                        use_container_width=True,
-                        caption=current_file.stem)
-                    if st.button(
-                            "Inspect This Image",
-                            type="primary",
-                            key="inspect_btn",
-                            use_container_width=True):
-                        st.session_state\
-                            .selected_sample = \
-                            current_file.name
-                        st.session_state\
-                            .inspecting = True
-                        st.session_state\
-                            .last_result = None
-                        st.rerun()
+                    n1, n2, n3, n4, n5 = \
+                        st.columns([1, 1, 3, 1, 1])
+                    with n1:
+                        if st.button(
+                                "⏮", key="first",
+                                use_container_width=True):
+                            st.session_state\
+                                .gallery_index = 0
+                            st.session_state\
+                                .last_result = None
+                            st.rerun()
+                    with n2:
+                        if st.button(
+                                "◀", key="prev",
+                                use_container_width=True):
+                            st.session_state\
+                                .gallery_index = max(
+                                    0, idx - 1)
+                            st.session_state\
+                                .last_result = None
+                            st.rerun()
+                    with n3:
+                        st.markdown(
+                            f'<p class="gallery-counter">'
+                            f'Image {idx + 1} of '
+                            f'{len(sample_files)}'
+                            f'</p>',
+                            unsafe_allow_html=True)
+                    with n4:
+                        if st.button(
+                                "▶", key="next",
+                                use_container_width=True):
+                            st.session_state\
+                                .gallery_index = min(
+                                    len(sample_files)-1,
+                                    idx + 1)
+                            st.session_state\
+                                .last_result = None
+                            st.rerun()
+                    with n5:
+                        if st.button(
+                                "⏭", key="last",
+                                use_container_width=True):
+                            st.session_state\
+                                .gallery_index = \
+                                len(sample_files) - 1
+                            st.session_state\
+                                .last_result = None
+                            st.rerun()
+
+                    current_file = sample_files[idx]
+                    with open(
+                            current_file, "rb") as f:
+                        current_bytes = f.read()
+                    arr = np.frombuffer(
+                        current_bytes, np.uint8)
+                    prev = cv2.cvtColor(
+                        cv2.imdecode(
+                            arr, cv2.IMREAD_COLOR),
+                        cv2.COLOR_BGR2RGB)
+
+                    cl, cm, cr = st.columns(
+                        [1, 4, 1])
+                    with cm:
+                        st.image(
+                            prev,
+                            use_container_width=True,
+                            caption=current_file.stem)
+                        if st.button(
+                                "Inspect This Image",
+                                type="primary",
+                                key="inspect_btn",
+                                use_container_width=True):
+                            st.session_state\
+                                .selected_sample = \
+                                current_file.name
+                            st.session_state\
+                                .inspecting = True
+                            st.session_state\
+                                .last_result = None
+                            st.rerun()
+
+                st.markdown(
+                    '</div>',
+                    unsafe_allow_html=True)
 
     # ── Upload ───────────────────────────────
     st.markdown(
-        '<p style="font-size:13px;color:#6c757d;'
-        'margin:16px 0 4px 0;">— or upload your '
-        'own image —</p>',
+        '<p class="section-header" '
+        'style="margin-top:20px;">'
+        'Upload Your Own Image</p>',
         unsafe_allow_html=True)
+    st.markdown(
+        "Have your own component photograph? "
+        "Upload it below for instant AI analysis.",
+        )
     uploaded = st.file_uploader(
         "Upload image",
         type=["png", "jpg", "jpeg"],
         label_visibility="collapsed")
 
-    # ── Resolve image ─────────────────────────
+    # ── Resolve ───────────────────────────────
     if uploaded is not None:
         img_bytes = uploaded.getvalue()
         img_name = uploaded.name
@@ -531,11 +733,12 @@ if page == "Inspect":
         img_bytes = None
         img_name = None
 
-    # ── Run inference ─────────────────────────
+    # ── Inference ─────────────────────────────
     if img_bytes is not None:
 
         with st.spinner(
-                "Analysing component..."):
+                "Analysing component against "
+                "220 reference images..."):
             score, img_resized, anomaly_map = \
                 run_inference_cached(img_bytes)
 
@@ -546,7 +749,8 @@ if page == "Inspect":
         defect_type, confidence = \
             classify_defect(anomaly_map, score)
 
-        if defect_type == "Flip / Orientation error":
+        if defect_type == \
+                "Flip / Orientation error":
             verdict = "PASS"
             defect_type = "No defect"
 
@@ -555,21 +759,27 @@ if page == "Inspect":
 
         if img_name != \
                 st.session_state.last_filename:
-            st.session_state.inspection_log.append({
-                "timestamp": pd.Timestamp.now()
-                .strftime("%Y-%m-%d %H:%M:%S"),
-                "filename": img_name,
-                "anomaly_score": round(score, 4),
-                "threshold": THRESHOLD,
-                "verdict": verdict,
-                "defect_type": defect_type
-                if verdict == "FAIL" else "—",
-            })
-            st.session_state.last_filename = img_name
+            st.session_state.inspection_log\
+                .append({
+                    "timestamp": pd.Timestamp
+                    .now().strftime(
+                        "%Y-%m-%d %H:%M:%S"),
+                    "filename": img_name,
+                    "anomaly_score": round(
+                        score, 4),
+                    "threshold": THRESHOLD,
+                    "verdict": verdict,
+                    "defect_type": defect_type
+                    if verdict == "FAIL"
+                    else "—",
+                })
+            st.session_state.last_filename = \
+                img_name
             pd.DataFrame(
                 st.session_state.inspection_log
             ).to_csv(
-                "inspection_log.csv", index=False)
+                "inspection_log.csv",
+                index=False)
 
         st.session_state.last_result = {
             "verdict": verdict,
@@ -577,8 +787,11 @@ if page == "Inspect":
             "defect_type": defect_type,
         }
 
-        # ── Results ───────────────────────────
         st.markdown("---")
+        st.markdown(
+            '<p class="section-header">'
+            'Inspection Result</p>',
+            unsafe_allow_html=True)
 
         c1, c2, c3 = st.columns(3)
 
@@ -588,35 +801,36 @@ if page == "Inspect":
                     '<div class="pass-badge">'
                     '✓ PASS'
                     '<span class="verdict-sub">'
-                    'No defect detected</span>'
-                    '</div>',
+                    'No defect detected'
+                    '</span></div>',
                     unsafe_allow_html=True)
             else:
                 st.markdown(
                     '<div class="fail-badge">'
                     '✗ FAIL'
                     f'<span class="verdict-sub">'
-                    f'{defect_type}</span>'
-                    '</div>',
+                    f'{defect_type}'
+                    f'</span></div>',
                     unsafe_allow_html=True)
 
         with c2:
+            fill_class = "score-fill-pass" \
+                if verdict == "PASS" \
+                else "score-fill-fail"
             st.markdown(
-                '<div class="card">'
-                '<p class="card-label">'
-                'Anomaly Score</p>'
-                f'<p style="font-size:28px;'
-                f'font-weight:700;margin:0;'
-                f'color:#1a1a2e;">'
+                f'<div class="metric-card">'
+                f'<p class="metric-label">'
+                f'Anomaly Score</p>'
+                f'<p class="metric-value">'
                 f'{score_pct:.1f}%</p>'
                 f'<div class="score-track">'
-                f'<div class="score-fill-'
-                f'{"pass" if verdict == "PASS" else "fail"}" '
-                f'style="width:{min(score_pct,100):.1f}%">'
+                f'<div class="{fill_class}" '
+                f'style="width:'
+                f'{min(score_pct,100):.1f}%">'
                 f'</div></div>'
-                f'<p class="score-label">'
-                f'Threshold: {threshold_pct:.0f}%</p>'
-                f'</div>',
+                f'<p class="metric-sub">'
+                f'Threshold: {threshold_pct:.0f}%'
+                f'</p></div>',
                 unsafe_allow_html=True)
 
         with c3:
@@ -627,28 +841,30 @@ if page == "Inspect":
                 st.session_state.inspection_log
                 if r["verdict"] == "PASS")
             st.markdown(
-                '<div class="card">'
-                '<p class="card-label">'
-                'This Session</p>'
-                f'<p style="font-size:28px;'
-                f'font-weight:700;margin:0;'
-                f'color:#1a1a2e;">'
+                f'<div class="metric-card">'
+                f'<p class="metric-label">'
+                f'This Session</p>'
+                f'<p class="metric-value">'
                 f'{passed}/{total}</p>'
-                f'<p class="score-label">'
+                f'<p class="metric-sub">'
                 f'components passed</p>'
                 f'</div>',
                 unsafe_allow_html=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(
+            "<br>", unsafe_allow_html=True)
 
         if verdict == "PASS":
-            col1, col2, col3 = st.columns([1, 2, 1])
+            col1, col2, col3 = st.columns(
+                [1, 2, 1])
             with col2:
                 st.image(
                     img_resized,
                     use_container_width=True)
                 st.success(
-                    "Component passed — no defects.")
+                    "Component passed — "
+                    "no defects detected. "
+                    "Safe to use.")
         else:
             overlay = make_overlay(
                 img_resized, anomaly_map)
@@ -658,42 +874,34 @@ if page == "Inspect":
             with col1:
                 st.image(
                     overlay,
-                    use_container_width=True,
-                    caption="Anomaly heatmap — "
-                            "red = high anomaly")
+                    use_container_width=True)
+                st.caption(
+                    "Anomaly heatmap — "
+                    "red = high anomaly")
             with col2:
                 st.image(
                     zoom,
-                    use_container_width=True,
-                    caption="Defect location — zoomed")
+                    use_container_width=True)
+                st.caption(
+                    "Defect location — zoomed")
             st.error(
-                f"Failed — **{defect_type}** "
-                f"detected. Do not ship.")
-
-        if verdict == "FAIL" and defect_type:
-            st.markdown(
-                '<div class="card" style="'
-                'margin-top:16px;">'
-                '<p class="card-label">Defect Detail'
-                '</p>'
-                f'<p style="font-size:15px;'
-                f'color:#1a1a2e;margin:0;">'
-                f'<strong>Type:</strong> '
-                f'{defect_type}</p>'
-                f'<p style="font-size:15px;'
-                f'color:#1a1a2e;margin:4px 0 0 0;">'
-                f'<strong>Confidence:</strong> '
-                f'{confidence*100:.0f}%</p>'
-                f'</div>',
-                unsafe_allow_html=True)
+                f"Component failed — "
+                f"**{defect_type}** detected. "
+                f"Do not ship.")
 
 
 # =============================================
-# PAGE: DASHBOARD
+# TAB 2: DASHBOARD
 # =============================================
-elif page == "Dashboard":
+with t2:
 
-    st.markdown("## Inspection Dashboard")
+    st.markdown(
+        '<p class="section-header">'
+        'Inspection Dashboard</p>',
+        unsafe_allow_html=True)
+    st.markdown(
+        "A live summary of all inspections "
+        "carried out in this session.")
 
     if os.path.exists("inspection_log.csv"):
         log_df = pd.read_csv("inspection_log.csv")
@@ -703,8 +911,9 @@ elif page == "Dashboard":
 
     if len(log_df) == 0:
         st.info(
-            "No inspections yet — go to "
-            "Inspect to get started.")
+            "No inspections yet — go to the "
+            "Inspect tab and analyse some "
+            "components to see results here.")
     else:
         total = len(log_df)
         passed = len(
@@ -713,24 +922,36 @@ elif page == "Dashboard":
         pass_rate = passed / total * 100
 
         s1, s2, s3, s4 = st.columns(4)
-        for col, val, label in zip(
+        for col, val, label, color in zip(
             [s1, s2, s3, s4],
             [total, passed, failed,
              f"{pass_rate:.0f}%"],
             ["Total", "Passed",
-             "Failed", "Pass Rate"]
+             "Failed", "Pass Rate"],
+            ["#1a1a2e", "#155724",
+             "#721c24", "#0c5460"]
         ):
             with col:
                 st.markdown(
-                    f'<div class="stat-chip">'
-                    f'<p class="stat-value">'
+                    f'<div style="background:white;'
+                    f'border-radius:12px;'
+                    f'padding:16px;text-align:center;'
+                    f'box-shadow:0 1px 3px '
+                    f'rgba(0,0,0,0.06);">'
+                    f'<p style="font-size:28px;'
+                    f'font-weight:800;color:{color};'
+                    f'margin:0;line-height:1;">'
                     f'{val}</p>'
-                    f'<p class="stat-label">'
+                    f'<p style="font-size:11px;'
+                    f'color:#adb5bd;margin:4px 0 0 0;'
+                    f'text-transform:uppercase;'
+                    f'letter-spacing:0.8px;">'
                     f'{label}</p></div>',
                     unsafe_allow_html=True)
 
         st.markdown(
             "<br>", unsafe_allow_html=True)
+
         col1, col2 = st.columns(2)
 
         with col1:
@@ -738,6 +959,9 @@ elif page == "Dashboard":
             fig, ax = plt.subplots(figsize=(4, 4))
             fig.patch.set_facecolor("white")
             ax.set_facecolor("white")
+            wedge_props = {
+                "linewidth": 2,
+                "edgecolor": "white"}
             ax.pie(
                 [passed, failed],
                 labels=[
@@ -745,7 +969,9 @@ elif page == "Dashboard":
                     f"FAIL ({failed})"],
                 colors=["#28a745", "#dc3545"],
                 autopct="%1.0f%%",
-                textprops={"color": "#333"})
+                wedgeprops=wedge_props,
+                textprops={"color": "#333",
+                           "fontsize": 11})
             st.pyplot(fig)
             plt.close()
 
@@ -755,15 +981,24 @@ elif page == "Dashboard":
             fig2, ax2 = plt.subplots(figsize=(4, 4))
             fig2.patch.set_facecolor("white")
             ax2.set_facecolor("#f8f9fa")
+            colors_pts = [
+                "#28a745" if v == "PASS"
+                else "#dc3545"
+                for v in log_df["verdict"]]
             ax2.plot(
                 scores.values,
-                color="#1a1a2e",
-                marker="o",
-                linewidth=2,
-                markersize=5)
+                color="#dee2e6",
+                linewidth=1.5,
+                zorder=1)
+            ax2.scatter(
+                range(len(scores)),
+                scores.values,
+                c=colors_pts,
+                s=50,
+                zorder=2)
             ax2.axhline(
                 y=THRESHOLD * 100,
-                color="#dc3545",
+                color="#fd7e14",
                 linestyle="--",
                 linewidth=1.5,
                 label=f"Threshold "
@@ -771,21 +1006,25 @@ elif page == "Dashboard":
             ax2.set_xlabel(
                 "Inspection #",
                 color="#6c757d",
-                fontsize=10)
+                fontsize=9)
             ax2.set_ylabel(
                 "Anomaly Score (%)",
                 color="#6c757d",
-                fontsize=10)
+                fontsize=9)
             ax2.tick_params(
-                colors="#6c757d", labelsize=9)
+                colors="#6c757d",
+                labelsize=8)
             ax2.spines["top"].set_visible(False)
             ax2.spines["right"].set_visible(False)
+            ax2.spines["left"].set_color("#dee2e6")
+            ax2.spines["bottom"].set_color(
+                "#dee2e6")
             ax2.legend(fontsize=9)
             st.pyplot(fig2)
             plt.close()
 
         st.markdown("---")
-        st.markdown("**Inspection Log**")
+        st.markdown("**Full Log**")
 
         def colour_verdict(val):
             if val == "PASS":
@@ -808,14 +1047,36 @@ elif page == "Dashboard":
 
 
 # =============================================
-# PAGE: ABOUT
+# TAB 3: ABOUT
 # =============================================
-elif page == "About":
+with t3:
 
-    st.markdown("## About This System")
+    st.markdown(
+        '<p class="section-header">About</p>',
+        unsafe_allow_html=True)
+
+    st.markdown("### What Problem Does This Solve?")
+    st.markdown(
+        "In manufacturing, a single defective "
+        "component reaching a finished product "
+        "can cause failure, recalls, or safety "
+        "incidents. Human visual inspection is "
+        "inconsistent and fatigues over time. "
+        "This system provides automated, "
+        "consistent inspection that never tires.")
+
+    st.markdown("### Why PatchCore?")
+    st.markdown(
+        "Most AI defect detection systems need "
+        "thousands of labelled defective examples "
+        "to train. In real factories, defects are "
+        "rare — you may only see a handful per "
+        "year. PatchCore solves this by training "
+        "only on good parts, learning what normal "
+        "looks like and flagging anything that "
+        "deviates.")
 
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("### Performance")
         st.markdown("""
@@ -835,42 +1096,17 @@ elif page == "About":
 |-----------|--------|
 | Algorithm | PatchCore |
 | Backbone | WideResNet50 |
-| Framework | PyTorch + Anomalib |
+| Framework | PyTorch |
 | Interface | Streamlit |
-| Deployment | Hugging Face Spaces |
+| Deployment | HF Spaces |
 | Dataset | MVTec AD |
         """)
 
-    st.markdown("---")
-    st.markdown("### How It Works")
     st.markdown(
-        "PatchCore trains only on defect-free "
-        "images — 220 in this case. It builds a "
-        "memory bank of what a good component looks "
-        "like at the patch level. At inspection "
-        "time, every patch in the new image is "
-        "compared to its nearest neighbours in the "
-        "memory bank. Patches that are far from any "
-        "known-good patch produce high anomaly "
-        "scores and are flagged as defective."
-    )
-
-    st.markdown("---")
-    st.markdown("### Why This Matters")
-    st.markdown(
-        "In real manufacturing, defective parts "
-        "are rare by definition. You cannot collect "
-        "thousands of defect examples to train a "
-        "classifier. PatchCore solves this — it "
-        "needs only good parts to train, matching "
-        "real factory conditions exactly."
-    )
-
-    st.markdown(
-        "<p style='color:#aaaaaa;font-size:12px;"
-        "margin-top:32px;'>"
+        "<p style='color:#adb5bd;font-size:12px;"
+        "margin-top:24px;'>"
         "Built by Rhys Moroney · "
         "Quality Engineering Portfolio · "
-        "MVTec AD dataset — Bergmann et al., "
+        "MVTec AD — Bergmann et al., "
         "CVPR 2019</p>",
         unsafe_allow_html=True)
