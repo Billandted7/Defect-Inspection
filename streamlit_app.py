@@ -475,7 +475,7 @@ st.markdown("""
         <strong style="color:white;">
         To get started:</strong>
         browse the sample images below using the
-        arrows (or keyboard ← →) and click
+        arrows and click
         <em>Inspect This Image</em> to run the AI
         analysis. Use the tabs above to view your
         inspection history on the Dashboard, or
@@ -566,8 +566,7 @@ with t1:
 
                 st.caption(
                     "Use the arrows to browse "
-                    "— or press ← → on your "
-                    "keyboard — then click "
+                    " then click "
                     "Inspect This Image.")
 
                 n1, n2, n3, n4, n5 = \
@@ -1170,7 +1169,7 @@ with t3:
         st.markdown(
             "The system was trained and tested on "
             "metal nuts"
-            "detecting three types "
+            " detecting three types "
             "of defect:"
         )
         st.markdown(
