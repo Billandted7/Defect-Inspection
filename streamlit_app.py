@@ -214,6 +214,36 @@ st.markdown("""
         height: 8px;
         border-radius: 6px;
     }
+    .history-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .history-verdict-pass {
+        background: #d4edda;
+        color: #155724;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        min-width: 48px;
+        text-align: center;
+    }
+    .history-verdict-fail {
+        background: #f8d7da;
+        color: #721c24;
+        border-radius: 6px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        min-width: 48px;
+        text-align: center;
+    }
     * {
         animation-duration: 0s !important;
         transition-duration: 0s !important;
@@ -222,6 +252,21 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     header {visibility: hidden;}
 </style>
+
+<script>
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') {
+        const prevBtn = document.querySelector(
+            '[data-testid="baseButton-secondary"][key="prev"]');
+        if (prevBtn) prevBtn.click();
+    }
+    if (e.key === 'ArrowRight') {
+        const nextBtn = document.querySelector(
+            '[data-testid="baseButton-secondary"][key="next"]');
+        if (nextBtn) nextBtn.click();
+    }
+});
+</script>
 """, unsafe_allow_html=True)
 
 # =============================================
@@ -239,6 +284,8 @@ if "inspecting" not in st.session_state:
     st.session_state.inspecting = False
 if "gallery_index" not in st.session_state:
     st.session_state.gallery_index = 0
+if "result_history" not in st.session_state:
+    st.session_state.result_history = []
 
 THRESHOLD = 0.50
 
@@ -388,23 +435,23 @@ def make_zoomed_mask(img_rgb, anomaly_map):
     return contour_img, zoom
 
 
-def score_interpretation(score_pct, threshold_pct,
-                          verdict):
+def score_interpretation(score_pct,
+                         threshold_pct, verdict):
     diff = score_pct - threshold_pct
     if verdict == "PASS":
         if diff < -20:
             return "Well within normal range", \
                 "#155724"
         else:
-            return "Within acceptable range — " \
-                   "borderline", "#856404"
+            return "Within acceptable range " \
+                   "— borderline", "#856404"
     else:
         if diff > 20:
-            return "Well above threshold — " \
-                   "clear defect", "#721c24"
+            return "Well above threshold " \
+                   "— clear defect", "#721c24"
         else:
-            return "Just above threshold — " \
-                   "borderline fail", "#856404"
+            return "Just above threshold " \
+                   "— borderline fail", "#856404"
 
 
 # =============================================
@@ -413,7 +460,7 @@ def score_interpretation(score_pct, threshold_pct,
 st.markdown("""
 <div class="hero">
     <div class="hero-badge">
-        Portfolio Project · Quality Engineering
+        AI Project · Quality Engineering
     </div>
     <h1>AI Visual Inspection System</h1>
     <p>
@@ -428,11 +475,11 @@ st.markdown("""
         <strong style="color:white;">
         To get started:</strong>
         browse the sample images below using the
-        arrows and click <em>Inspect This Image</em>
-        to run the AI analysis. Use the tabs above
-        to view your inspection history on the
-        Dashboard, or learn how the model works
-        on the About page.
+        arrows (or keyboard ← →) and click
+        <em>Inspect This Image</em> to run the AI
+        analysis. Use the tabs above to view your
+        inspection history on the Dashboard, or
+        learn how the model works on the About page.
     </p>
     <div class="hero-stats">
         <div class="hero-stat">
@@ -514,10 +561,14 @@ with t1:
                 unsafe_allow_html=True)
 
             with st.expander(
-                    "Browse images — use arrows "
-                    "to navigate, then click "
-                    "Inspect",
+                    "Browse Sample Images",
                     expanded=show_gallery):
+
+                st.caption(
+                    "Use the arrows to browse "
+                    "— or press ← → on your "
+                    "keyboard — then click "
+                    "Inspect This Image.")
 
                 n1, n2, n3, n4, n5 = \
                     st.columns([1, 1, 3, 1, 1])
@@ -681,6 +732,23 @@ with t1:
                 })
             st.session_state.last_filename = \
                 img_name
+
+            # Store result in history for
+            # revisiting
+            overlay_for_history = make_overlay(
+                img_resized, anomaly_map) \
+                if verdict == "FAIL" else None
+            st.session_state.result_history\
+                .append({
+                    "filename": img_name,
+                    "verdict": verdict,
+                    "score_pct": round(
+                        score_pct, 1),
+                    "defect_type": defect_type,
+                    "img_resized": img_resized,
+                    "overlay": overlay_for_history,
+                })
+
             pd.DataFrame(
                 st.session_state.inspection_log
             ).to_csv(
@@ -734,6 +802,10 @@ with t1:
                 f'style="width:'
                 f'{min(score_pct,100):.1f}%">'
                 f'</div></div>'
+                f'<p class="metric-sub">'
+                f'0% = identical to training images'
+                f' · 100% = completely different'
+                f'</p>'
                 f'<p class="metric-sub">'
                 f'Threshold: {threshold_pct:.0f}%'
                 f'</p>'
@@ -823,8 +895,7 @@ with t1:
                 f'padding:14px 18px;'
                 f'margin-top:12px;">'
                 f'<p style="margin:0;'
-                f'font-size:13px;'
-                f'font-weight:700;'
+                f'font-size:13px;font-weight:700;'
                 f'color:#856404;">'
                 f'What to do next</p>'
                 f'<p style="margin:6px 0 0 0;'
@@ -857,6 +928,61 @@ with t1:
                     .last_filename = None
                 st.session_state.inspecting = False
                 st.rerun()
+
+        # ── Previous Results History ──────────
+        if len(st.session_state.result_history) > 1:
+            st.markdown("---")
+            st.markdown(
+                '<p class="section-header">'
+                'Previous Results This Session'
+                '</p>',
+                unsafe_allow_html=True)
+
+            for i, r in enumerate(reversed(
+                    st.session_state
+                    .result_history[:-1])):
+                verdict_class = \
+                    "history-verdict-pass" \
+                    if r["verdict"] == "PASS" \
+                    else "history-verdict-fail"
+                verdict_symbol = "✓" \
+                    if r["verdict"] == "PASS" \
+                    else "✗"
+                defect_text = \
+                    r["defect_type"] \
+                    if r["verdict"] == "FAIL" \
+                    else "No defect"
+
+                with st.expander(
+                        f"{verdict_symbol} "
+                        f"{r['verdict']} — "
+                        f"{r['filename']} — "
+                        f"{r['score_pct']}%",
+                        expanded=False):
+                    h1, h2 = st.columns(2)
+                    with h1:
+                        st.image(
+                            r["img_resized"],
+                            use_container_width=True,
+                            caption="Component")
+                    with h2:
+                        if r["overlay"] \
+                                is not None:
+                            st.image(
+                                r["overlay"],
+                                use_container_width=True,
+                                caption="Heatmap")
+                        else:
+                            st.success(
+                                "No defects "
+                                "detected")
+                    st.markdown(
+                        f"**Verdict:** "
+                        f"{r['verdict']}  \n"
+                        f"**Score:** "
+                        f"{r['score_pct']}%  \n"
+                        f"**Defect:** "
+                        f"{defect_text}")
 
 
 # =============================================
@@ -1027,51 +1153,212 @@ with t3:
         '<p class="section-header">About</p>',
         unsafe_allow_html=True)
 
-    st.markdown("### What Problem Does This Solve?")
-    st.markdown(
-        "In manufacturing, a single defective "
-        "component reaching a finished product "
-        "can cause failure, recalls, or safety "
-        "incidents. Human visual inspection is "
-        "inconsistent and fatigues over time. "
-        "This system provides automated, "
-        "consistent inspection that never tires.")
+    with st.expander(
+            "What This Project Does",
+            expanded=True):
+        st.markdown(
+            "This project is an automated visual "
+            "inspection system — a computer program "
+            "that can look at a photograph of a "
+            "manufactured component and decide "
+            "whether that component is acceptable "
+            "or defective. If a defect is found, "
+            "the system draws a heatmap on the "
+            "image showing exactly where the "
+            "problem is located."
+        )
+        st.markdown(
+            "The system was trained and tested on "
+            "metal nuts"
+            "detecting three types "
+            "of defect:"
+        )
+        st.markdown(
+            "- **Scratches** — surface damage "
+            "caused by contact or abrasion\n"
+            "- **Bends** — physical deformation "
+            "where the component has been "
+            "distorted from its correct shape\n"
+            "- **Colour anomalies** — surface "
+            "contamination or staining\n"
+        
+        )
 
-    st.markdown("### Why PatchCore?")
-    st.markdown(
-        "Most AI defect detection systems need "
-        "thousands of labelled defective examples "
-        "to train. In real factories, defects are "
-        "rare — you may only see a handful per "
-        "year. PatchCore solves this by training "
-        "only on good parts, learning what normal "
-        "looks like and flagging anything that "
-        "deviates.")
+    with st.expander(
+            "Why Automated Inspection Matters"):
+        st.markdown(
+            "Human visual inspection has "
+            "well-documented limitations in "
+            "manufacturing."
+        )
+        st.markdown(
+            "**Fatigue** — A human inspector "
+            "becomes fatigued over a shift. "
+            "Studies consistently show that "
+            "inspection accuracy degrades "
+            "significantly after two hours of "
+            "continuous checking. An automated "
+            "system has no concept of fatigue."
+        )
+        st.markdown(
+            "**Subjectivity** — Two inspectors "
+            "looking at the same borderline "
+            "component may make different "
+            "decisions. An automated system "
+            "applies exactly the same decision "
+            "rule to every component."
+        )
+        st.markdown(
+            "**Traceability** — Manual inspection "
+            "produces no structured data. This "
+            "system automatically logs every "
+            "inspection with a timestamp, anomaly "
+            "score, and verdict — creating a "
+            "complete quality record."
+        )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("### Performance")
+    with st.expander(
+            "How the System Works"):
+        st.markdown("### The Core Problem")
+        st.markdown(
+            "The most obvious approach would be "
+            "to collect thousands of photographs "
+            "of both good and defective components "
+            "and train an AI to tell the "
+            "difference. The problem in "
+            "manufacturing is that defective "
+            "components are rare by definition. "
+            "This project uses anomaly detection "
+            "instead."
+        )
+        st.markdown("### Anomaly Detection")
+        st.markdown(
+            "Instead of teaching the system the "
+            "difference between good and bad, "
+            "anomaly detection teaches the system "
+            "only what good looks like. The system "
+            "studied 220 photographs of perfect "
+            "components until it built a detailed "
+            "understanding of what a normal metal "
+            "nut looks like. At inspection time, "
+            "it asks one question: does this look "
+            "like anything seen during training? "
+            "If not, it fails."
+        )
+        st.markdown("### The Memory Bank")
+        st.markdown(
+            "During training, every photograph is "
+            "divided into small overlapping "
+            "regions called patches. For each "
+            "patch, the neural network produces "
+            "a 1,536-number fingerprint describing "
+            "what that region looks like. All "
+            "225,280 fingerprints are stored in a "
+            "memory bank. At inspection time, each "
+            "patch of the new image is compared "
+            "to its nearest neighbours in the "
+            "memory bank. Patches far from "
+            "anything in the memory bank produce "
+            "high anomaly scores."
+        )
+
+    with st.expander("Model Performance"):
         st.markdown("""
-| Metric | Score |
-|--------|-------|
-| Image AUROC | **0.9976** |
-| Pixel AUROC | **0.9868** |
-| F1 Score | **0.9838** |
-| Good parts passed | **95%** |
-| Defects caught | **96%** |
+| Metric | Library Version | Independent Version |
+|--------|----------------|---------------------|
+| Image AUROC | **0.9976** | **0.9980** |
+| Pixel AUROC | **0.9868** | 0.9531 |
+        """)
+        st.markdown(
+            "AUROC stands for Area Under the "
+            "Receiver Operating Characteristic "
+            "curve. It measures how well the "
+            "system separates good components "
+            "from defective ones across all "
+            "possible decision thresholds. "
+            "1.0 is perfect. 0.5 is random "
+            "guessing. Above 0.90 is considered "
+            "strong in academic research."
+        )
+        st.markdown(
+            "The independent implementation "
+            "achieved 0.9980 image AUROC — "
+            "marginally higher than the library "
+            "baseline of 0.9976. This confirms "
+            "the implementation is correct."
+        )
+
+    with st.expander("Threshold Calibration"):
+        st.markdown(
+            "Every inspection system needs a "
+            "decision threshold — a score above "
+            "which a component is declared "
+            "defective. Set it too low and the "
+            "system fails good parts. Set it too "
+            "high and real defects slip through."
+        )
+        st.markdown("""
+| | Value |
+|---|---|
+| Good parts — lowest score | 0.2948 |
+| Good parts — highest score | 0.5952 |
+| Good parts — average score | 0.4244 |
+| **Calibrated threshold** | **0.5770** |
+| Good parts correctly passed | 95% (21/22) |
+| Defects correctly caught | 96% (89/93) |
         """)
 
-    with col2:
-        st.markdown("### Tech Stack")
+    with st.expander("Two Implementations"):
+        st.markdown("### Library Version")
+        st.markdown(
+            "The first version was built using "
+            "Anomalib — a professional open-source "
+            "library developed by Intel. This "
+            "established a validated performance "
+            "baseline."
+        )
+        st.markdown("### Independent Implementation")
+        st.markdown(
+            "The entire algorithm was then "
+            "re-implemented from scratch using "
+            "only PyTorch, NumPy, and "
+            "scikit-learn — demonstrating genuine "
+            "understanding of how the algorithm "
+            "works internally. Every component "
+            "was written independently: feature "
+            "extraction using forward hooks, "
+            "patch assembly, coreset sampling, "
+            "and anomaly scoring."
+        )
+
+    with st.expander("Possible Future Extensions"):
+        st.markdown(
+            "- **More component types** — the "
+            "same approach applies to any "
+            "component with photographs of "
+            "good examples\n"
+            "- **Live camera feed** — replace "
+            "file upload with a live industrial "
+            "camera stream\n"
+            "- **SPC integration** — feed anomaly "
+            "scores into control charts to detect "
+            "process drift before defects occur\n"
+            "- **Borderline flagging** — rather "
+            "than binary pass/fail, flag "
+            "borderline cases for human review"
+        )
+
+    with st.expander("Tech Stack"):
         st.markdown("""
 | Component | Detail |
 |-----------|--------|
 | Algorithm | PatchCore |
 | Backbone | WideResNet50 |
-| Framework | PyTorch |
+| Framework | PyTorch + Anomalib 2.4.0 |
 | Interface | Streamlit |
-| Deployment | HF Spaces |
-| Dataset | MVTec AD |
+| Deployment | Hugging Face Spaces |
+| Dataset | MVTec AD (metal nut) |
+| Language | Python 3.14 |
         """)
 
     st.markdown(
