@@ -50,22 +50,49 @@ st.markdown("""
     .pass-badge {
         background-color: #1b5e20;
         color: #69f0ae;
-        padding: 20px;
-        border-radius: 8px;
-        font-size: 24px;
+        padding: 24px 20px;
+        border-radius: 10px;
+        font-size: 22px;
         font-weight: bold;
         text-align: center;
         border: 2px solid #69f0ae;
+        margin-bottom: 8px;
     }
     .fail-badge {
         background-color: #b71c1c;
         color: #ff8a80;
-        padding: 20px;
-        border-radius: 8px;
-        font-size: 24px;
+        padding: 24px 20px;
+        border-radius: 10px;
+        font-size: 22px;
         font-weight: bold;
         text-align: center;
         border: 2px solid #ff8a80;
+        margin-bottom: 8px;
+    }
+    .welcome-stat {
+        background-color: #1e2130;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        margin: 4px;
+    }
+    .welcome-stat h2 {
+        font-size: 36px;
+        font-weight: bold;
+        color: #69f0ae;
+        margin: 0;
+    }
+    .welcome-stat p {
+        font-size: 13px;
+        color: #aaaaaa;
+        margin: 4px 0 0 0;
+    }
+    .step-box {
+        background-color: #1e2130;
+        border-left: 4px solid #2196F3;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
     }
     * {
         animation-duration: 0s !important;
@@ -92,7 +119,7 @@ if "inspecting" not in st.session_state:
 if "gallery_index" not in st.session_state:
     st.session_state.gallery_index = 0
 
-THRESHOLD = 0.42
+THRESHOLD = 0.50
 
 # =============================================
 # SIDEBAR
@@ -113,7 +140,7 @@ if st.session_state.model_trained:
         "**Backbone:** WideResNet50  \n"
         "**Image AUROC:** 0.9976  \n"
         "**Training set:** 220 good parts  \n"
-        "**Threshold:** 0.42 (calibrated)  \n"
+        "**Threshold:** 0.50 (calibrated)  \n"
         "**Good part pass rate:** 95%  \n"
         "**Defect detection rate:** 96%"
     )
@@ -122,8 +149,10 @@ else:
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
-    "Built by Rebecca Moroney  \n"
-    "AI Interface within Quality Engineering"
+    "Built by Rhys Moroney  \n"
+    "Quality Engineering Portfolio  \n"
+    "[GitHub](https://github.com/Billandted7/"
+    "Defect-Inspection)"
 )
 
 
@@ -225,6 +254,7 @@ def classify_defect(anomaly_map, score):
     else:
         return "Surface anomaly", score * 0.7
 
+
 # =============================================
 # VISUALS
 # =============================================
@@ -283,14 +313,6 @@ def make_zoomed_mask(img_rgb, anomaly_map):
 # =============================================
 if page == "Inspect Component":
 
-    st.title("Automated Visual Inspection System")
-    st.markdown(
-        "Upload a component image for automated "
-        "defect detection using PatchCore anomaly "
-        "detection. Trained on 220 defect-free metal "
-        "nut images — no defective examples required."
-    )
-
     model_path = Path(
         "exported_model/weights/torch/model.pt")
 
@@ -300,29 +322,137 @@ if page == "Inspect Component":
             "Please wait and refresh the page.")
         st.stop()
 
+    # =========================================
+    # LANDING / WELCOME SCREEN
+    # =========================================
     if not st.session_state.model_trained:
-        st.info("Click below to initialise.")
-        if st.button(
-                "Initialise Inspection System",
-                type="primary",
-                use_container_width=True):
-            with st.spinner("Initialising..."):
-                time.sleep(1)
-                st.session_state.model_trained = True
-                st.rerun()
+
+        st.markdown(
+            "<h1 style='text-align:center;"
+            "margin-bottom:4px;'>🔍 Automated Visual"
+            " Inspection System</h1>",
+            unsafe_allow_html=True)
+        st.markdown(
+            "<p style='text-align:center;"
+            "color:#aaaaaa;font-size:16px;"
+            "margin-bottom:32px;'>"
+            "AI-powered defect detection for "
+            "manufactured components</p>",
+            unsafe_allow_html=True)
+
+        # Key stats row
+        s1, s2, s3, s4 = st.columns(4)
+        stats = [
+            ("99.76%", "Image AUROC"),
+            ("220", "Training Images"),
+            ("95%", "Good Part Pass Rate"),
+            ("96%", "Defect Detection Rate"),
+        ]
+        for col, (val, label) in zip(
+                [s1, s2, s3, s4], stats):
+            with col:
+                st.markdown(
+                    f'<div class="welcome-stat">'
+                    f'<h2>{val}</h2>'
+                    f'<p>{label}</p>'
+                    f'</div>',
+                    unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("### How It Works")
+
+        steps = [
+            ("1", "Browse or upload a component image",
+             "Use the sample gallery or upload your "
+             "own photograph of a metal component."),
+            ("2", "AI analyses the image",
+             "PatchCore compares every patch of the "
+             "image against 220 known-good reference "
+             "images to detect any anomalies."),
+            ("3", "Instant pass or fail verdict",
+             "The system returns a PASS or FAIL "
+             "verdict with a heatmap showing exactly "
+             "where any defect is located."),
+        ]
+
+        for num, title, desc in steps:
+            st.markdown(
+                f'<div class="step-box">'
+                f'<strong>Step {num} — {title}'
+                f'</strong><br>'
+                f'<span style="color:#aaaaaa;">'
+                f'{desc}</span>'
+                f'</div>',
+                unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("### What Defects Can It Find?")
+
+        d1, d2, d3, d4 = st.columns(4)
+        defects = [
+            ("🔧", "Scratches",
+             "Surface marks from handling or machining"),
+            ("📐", "Bent / Deformed",
+             "Physical deformation at component edges"),
+            ("🎨", "Colour Contamination",
+             "Paint, oil, or surface staining"),
+            ("⚠️", "Surface Anomalies",
+             "Any other unexpected surface variation"),
+        ]
+        for col, (icon, name, desc) in zip(
+                [d1, d2, d3, d4], defects):
+            with col:
+                st.markdown(
+                    f'<div class="welcome-stat">'
+                    f'<h2 style="font-size:28px;">'
+                    f'{icon}</h2>'
+                    f'<p style="color:white;'
+                    f'font-weight:bold;">{name}</p>'
+                    f'<p>{desc}</p>'
+                    f'</div>',
+                    unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button(
+                    "Start Inspection System",
+                    type="primary",
+                    use_container_width=True):
+                with st.spinner(
+                        "Loading AI model..."):
+                    time.sleep(1)
+                    st.session_state\
+                        .model_trained = True
+                    st.rerun()
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(
+            "<p style='text-align:center;"
+            "color:#555555;font-size:12px;'>"
+            "Trained on the MVTec AD dataset · "
+            "PatchCore algorithm · "
+            "WideResNet50 backbone</p>",
+            unsafe_allow_html=True)
+
+    # =========================================
+    # MAIN INSPECTION INTERFACE
+    # =========================================
     else:
-        st.success("System ready for inspection")
+        st.title("Component Inspection")
+        st.markdown(
+            "Browse the sample images below or "
+            "upload your own. Click **Inspect This "
+            "Image** to run the AI analysis."
+        )
         st.markdown("---")
 
-        # =========================================
-        # SAMPLE IMAGE GALLERY
-        # =========================================
+        # Sample image gallery
         sample_folder = Path("sample_images")
         selected_img_bytes = None
         selected_img_name = None
 
-        # If inspecting flag is set load selected
-        # sample immediately before gallery renders
         if st.session_state.inspecting \
                 and st.session_state.selected_sample:
             sp = Path("sample_images") / \
@@ -338,8 +468,6 @@ if page == "Inspect Component":
                 list(sample_folder.glob("*.jpg")))
 
             if sample_files:
-                # Collapse gallery once inspecting
-                # or once a result exists
                 show_gallery = (
                     not st.session_state.inspecting
                     and st.session_state.last_result
@@ -355,31 +483,29 @@ if page == "Inspect Component":
                         expanded=show_gallery):
 
                     st.markdown(
-                        "Each image is a real metal "
-                        "nut photograph. Use the "
-                        "arrows to browse then click "
-                        "Inspect This Image."
+                        "These are real metal nut "
+                        "photographs from an "
+                        "industrial inspection "
+                        "dataset. Some have defects, "
+                        "some are perfect — the AI "
+                        "will tell you which."
                     )
 
-                    # Navigation
                     n1, n2, n3, n4, n5 = \
                         st.columns([1, 1, 3, 1, 1])
 
                     with n1:
                         if st.button(
-                                "<<",
-                                key="first",
+                                "<<", key="first",
                                 use_container_width=True):
                             st.session_state\
                                 .gallery_index = 0
                             st.session_state\
                                 .last_result = None
                             st.rerun()
-
                     with n2:
                         if st.button(
-                                "<",
-                                key="prev",
+                                "<", key="prev",
                                 use_container_width=True):
                             st.session_state\
                                 .gallery_index = max(
@@ -387,7 +513,6 @@ if page == "Inspect Component":
                             st.session_state\
                                 .last_result = None
                             st.rerun()
-
                     with n3:
                         st.markdown(
                             f"<p style='text-align:"
@@ -396,11 +521,9 @@ if page == "Inspect Component":
                             f"{len(sample_files)}"
                             f"</p>",
                             unsafe_allow_html=True)
-
                     with n4:
                         if st.button(
-                                ">",
-                                key="next",
+                                ">", key="next",
                                 use_container_width=True):
                             st.session_state\
                                 .gallery_index = min(
@@ -409,11 +532,9 @@ if page == "Inspect Component":
                             st.session_state\
                                 .last_result = None
                             st.rerun()
-
                     with n5:
                         if st.button(
-                                ">>",
-                                key="last",
+                                ">>", key="last",
                                 use_container_width=True):
                             st.session_state\
                                 .gallery_index = \
@@ -434,7 +555,8 @@ if page == "Inspect Component":
                     img_rgb_prev = cv2.cvtColor(
                         img_bgr, cv2.COLOR_BGR2RGB)
 
-                    cl, cm, cr = st.columns([1, 4, 1])
+                    cl, cm, cr = st.columns(
+                        [1, 4, 1])
                     with cm:
                         st.image(
                             img_rgb_prev,
@@ -456,10 +578,20 @@ if page == "Inspect Component":
 
         st.markdown("---")
         st.markdown("#### Or Upload Your Own Image")
+        st.markdown(
+            "Have your own metal nut photograph? "
+            "Upload it below and the system will "
+            "analyse it instantly."
+        )
         uploaded = st.file_uploader(
             "Choose image (PNG or JPG)",
             type=["png", "jpg", "jpeg"],
-            help="Upload a metal nut image."
+            help=(
+                "For best results upload a clear, "
+                "well-lit photograph of a metal nut "
+                "against a dark background, similar "
+                "to the sample images above."
+            )
         )
 
         # Determine image to process
@@ -487,26 +619,27 @@ if page == "Inspect Component":
         if img_bytes is not None:
 
             with st.spinner(
-                    "Running PatchCore inference..."):
+                    "Analysing image — "
+                    "comparing against 220 "
+                    "reference components..."):
                 score, img_resized, anomaly_map = \
                     run_inference_cached(img_bytes)
 
-            # Inference done — reset inspecting flag
             st.session_state.inspecting = False
 
             verdict = "PASS" \
                 if score <= THRESHOLD else "FAIL"
             defect_type, confidence = \
                 classify_defect(anomaly_map, score)
-            # Orientation variance is not a physical
-            # defect — override to PASS
-            if defect_type == "Flip / Orientation error":
+
+            if defect_type == \
+                    "Flip / Orientation error":
                 verdict = "PASS"
                 defect_type = "No defect"
+
             score_pct = score * 100
             threshold_pct = THRESHOLD * 100
 
-            # Log only if new image
             if img_name != \
                     st.session_state.last_filename:
                 st.session_state.inspection_log\
@@ -531,7 +664,6 @@ if page == "Inspect Component":
                     "inspection_log.csv",
                     index=False)
 
-            # Store last result
             st.session_state.last_result = {
                 "verdict": verdict,
                 "score": score,
@@ -547,14 +679,20 @@ if page == "Inspect Component":
                 if verdict == "PASS":
                     st.markdown(
                         '<div class="pass-badge">'
-                        'PASS<br>No Defect Detected'
-                        '</div>',
+                        '✓ PASS<br>'
+                        '<span style="font-size:14px;'
+                        'font-weight:normal;">'
+                        'No defect detected'
+                        '</span></div>',
                         unsafe_allow_html=True)
                 else:
                     st.markdown(
                         '<div class="fail-badge">'
-                        f'FAIL<br>{defect_type}'
-                        '</div>',
+                        '✗ FAIL<br>'
+                        f'<span style="font-size:14px;'
+                        f'font-weight:normal;">'
+                        f'{defect_type}'
+                        f'</span></div>',
                         unsafe_allow_html=True)
 
             with c2:
@@ -564,10 +702,16 @@ if page == "Inspect Component":
                     f"{score_pct:.1f}%",
                     delta=(
                         f"{delta_val:.1f}% "
-                        f"vs threshold"))
+                        f"vs threshold"),
+                    help=(
+                        "How different this component "
+                        "looks compared to known-good "
+                        "parts. Above 50% = FAIL."
+                    )
+                )
                 if verdict == "FAIL":
                     st.markdown(
-                        f"**Defect:** "
+                        f"**Defect type:** "
                         f"{defect_type}  \n"
                         f"**Confidence:** "
                         f"{confidence*100:.0f}%")
@@ -580,7 +724,8 @@ if page == "Inspect Component":
                     st.session_state.inspection_log
                     if r["verdict"] == "PASS")
                 st.metric(
-                    "Session Inspections", total)
+                    "Inspections This Session",
+                    total)
                 st.metric(
                     "Pass Rate",
                     f"{passed/total*100:.0f}%"
@@ -597,8 +742,9 @@ if page == "Inspect Component":
                         img_resized,
                         use_container_width=True)
                     st.success(
-                        "Component passed. "
-                        "No anomalies detected.")
+                        "This component has passed "
+                        "inspection. No defects were "
+                        "detected. Safe to use.")
             else:
                 overlay = make_overlay(
                     img_resized, anomaly_map)
@@ -607,46 +753,63 @@ if page == "Inspect Component":
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown("**Heatmap Overlay**")
+                    st.markdown("**Anomaly Heatmap**")
                     st.image(
                         overlay,
                         use_container_width=True)
                     st.caption(
-                        "Red = high anomaly. "
-                        "Blue = normal.")
+                        "Red areas = high anomaly "
+                        "score. Blue = normal. The "
+                        "AI is most concerned about "
+                        "the red regions.")
                 with col2:
                     st.markdown(
-                        "**Defect Location — Zoomed**")
+                        "**Defect Location**")
                     st.image(
                         zoom,
                         use_container_width=True)
                     st.caption(
-                        "Red outline = predicted "
-                        "defect region.")
+                        "Red outline shows where "
+                        "the predicted defect is "
+                        "located on the component.")
 
                 st.markdown("---")
                 st.error(
-                    f"Component failed. "
-                    f"Detected: **{defect_type}**. "
-                    f"Do not ship.")
+                    f"⚠️ This component has "
+                    f"**failed** inspection. "
+                    f"Detected defect: "
+                    f"**{defect_type}**. "
+                    f"Do not use or ship this part.")
 
             st.markdown("---")
             st.markdown("### Anomaly Score")
+            st.markdown(
+                "The anomaly score measures how "
+                "different this component looks "
+                "compared to the 220 known-good "
+                "training images. A score above "
+                f"**{threshold_pct:.0f}%** triggers "
+                "a FAIL verdict."
+            )
             bar_color = "#4CAF50" \
                 if verdict == "PASS" else "#FF5722"
             bar_html = (
                 f'<div style="background:#333;'
-                f'border-radius:4px;height:20px;">'
+                f'border-radius:4px;height:24px;'
+                f'margin:8px 0;">'
                 f'<div style="background:{bar_color};'
                 f'width:{min(score_pct, 100):.1f}%;'
-                f'height:20px;border-radius:4px;">'
+                f'height:24px;border-radius:4px;'
+                f'display:flex;align-items:center;'
+                f'padding-left:8px;color:white;'
+                f'font-weight:bold;font-size:13px;">'
+                f'{score_pct:.1f}%'
                 f'</div></div>'
-                f'<p style="margin-top:8px;">'
-                f'Score: <strong>{score_pct:.1f}%'
-                f'</strong> | Threshold: '
-                f'<strong>{threshold_pct:.1f}%'
-                f'</strong> | Verdict: '
-                f'<strong>{verdict}</strong></p>'
+                f'<p style="color:#aaaaaa;'
+                f'font-size:13px;">Threshold: '
+                f'{threshold_pct:.0f}% | '
+                f'Verdict: <strong>'
+                f'{verdict}</strong></p>'
             )
             st.markdown(
                 bar_html, unsafe_allow_html=True)
@@ -658,6 +821,10 @@ if page == "Inspect Component":
 elif page == "Dashboard":
 
     st.title("Inspection Dashboard")
+    st.markdown(
+        "A summary of all inspections carried out "
+        "in this session."
+    )
 
     if os.path.exists("inspection_log.csv"):
         log_df = pd.read_csv("inspection_log.csv")
@@ -667,8 +834,10 @@ elif page == "Dashboard":
 
     if len(log_df) == 0:
         st.info(
-            "No inspections yet. "
-            "Go to Inspect Component to get started.")
+            "No inspections recorded yet. "
+            "Go to **Inspect Component** and "
+            "analyse some images to see results "
+            "here.")
     else:
         total = len(log_df)
         passed = len(
@@ -717,7 +886,7 @@ elif page == "Dashboard":
                 color="red",
                 linestyle="--",
                 label=f"Threshold "
-                      f"({THRESHOLD*100:.1f}%)")
+                      f"({THRESHOLD*100:.0f}%)")
             ax2.set_xlabel(
                 "Inspection #", color="white")
             ax2.set_ylabel(
@@ -731,6 +900,10 @@ elif page == "Dashboard":
 
         st.markdown("---")
         st.markdown("### Full Inspection Log")
+        st.markdown(
+            "Every inspection carried out this "
+            "session. Download as CSV for records."
+        )
 
         def colour_verdict(val):
             color = "#1b5e20" if val == "PASS" \
@@ -745,7 +918,7 @@ elif page == "Dashboard":
             hide_index=True)
 
         st.download_button(
-            "Download Log (CSV)",
+            "Download Inspection Log (CSV)",
             log_df.to_csv(index=False),
             "inspection_log.csv",
             "text/csv",
@@ -758,76 +931,100 @@ elif page == "Dashboard":
 elif page == "About":
 
     st.title("About This System")
+    st.markdown(
+        "Technical documentation and background "
+        "on the AI model powering this inspection "
+        "system."
+    )
 
+    st.markdown("---")
+    st.markdown("## What Problem Does This Solve?")
+    st.markdown(
+        "In manufacturing, a single defective "
+        "component reaching a finished product can "
+        "cause failure, recalls, or safety incidents. "
+        "Traditional visual inspection relies on "
+        "human operators who tire and make mistakes. "
+        "This system provides consistent, "
+        "automated inspection that never fatigues."
+    )
+
+    st.markdown("---")
+    st.markdown("## Why PatchCore?")
+    st.markdown(
+        "Most defect detection systems require "
+        "thousands of labelled examples of defective "
+        "parts. In real factories, defects are rare "
+        "by definition — you may only see a handful "
+        "per year. PatchCore solves this by training "
+        "only on good parts. It learns what normal "
+        "looks like, then flags anything that "
+        "deviates from that baseline."
+    )
+
+    st.markdown("---")
+    st.markdown("## Model Performance")
     st.markdown("""
-## What This Does
-
-Automated visual inspection of manufactured
-components using PatchCore anomaly detection.
-Detects scratches, bends, colour contamination,
-and orientation errors without ever training on
-defective parts.
-
----
-
-## Model Performance
-
-| Metric | Score |
-|--------|-------|
-| Image AUROC | **0.9976** |
-| Pixel AUROC | **0.9868** |
-
-
----
-
-## Threshold Calibration
-
-| | Value |
-|---|---|
-| Good parts — min score | 0.2948 |
-| Good parts — max score | 0.5952 |
-| Good parts — mean score | 0.4244 |
-| **Calibrated threshold** | **0.4200** |
-| Good parts passing | 95% |
-| Defects caught | 96% |
-
----
-
-## How PatchCore Works
-
-1. WideResNet50 extracts patch-level features
-   from every defect-free training image
-2. Features stored in a memory bank of what
-   normal looks like
-3. At inspection time, each patch compared to
-   nearest neighbours in memory bank
-4. Large distances flagged as anomalous
-5. Scores assembled into pixel-level heatmap
-
----
-
-## Tech Stack
-
-Python · PyTorch · Anomalib 2.4.0 ·
-Streamlit · OpenCV · WideResNet50
-
----
-
-*Dataset: MVTec AD — Bergmann et al., CVPR 2019*
+| Metric | Score | What It Means |
+|--------|-------|---------------|
+| Image AUROC | **0.9976** | Near-perfect separation of good vs defective |
+| Pixel AUROC | **0.9868** | Accurate defect localisation |
+| Image F1 Score | **0.9838** | Balance of precision and recall |
     """)
 
-    if Path(
-        "portfolio_outputs/portfolio_main.png"
-    ).exists():
-        st.markdown("---")
-        st.markdown("## Example Results")
-        st.image(
-            "portfolio_outputs/portfolio_main.png",
-            use_container_width=True)
+    st.markdown("---")
+    st.markdown("## Threshold Calibration")
+    st.markdown(
+        "The acceptance threshold was set by running "
+        "all known-good test images through the "
+        "model and finding the score distribution."
+    )
+    st.markdown("""
+| | Value |
+|---|---|
+| Good parts — lowest score | 0.2948 |
+| Good parts — highest score | 0.5952 |
+| Good parts — average score | 0.4244 |
+| **Acceptance threshold** | **0.5000** |
+| Good parts correctly passed | 95% |
+| Defective parts correctly caught | 96% |
+    """)
 
-    if Path(
-        "portfolio_outputs/defect_deep_dive.png"
-    ).exists():
-        st.image(
-            "portfolio_outputs/defect_deep_dive.png",
-            use_container_width=True)
+    st.markdown("---")
+    st.markdown("## How PatchCore Works")
+    st.markdown("""
+1. **Feature extraction** — WideResNet50 processes
+   every training image and extracts patch-level
+   features from layers 2 and 3
+2. **Memory bank** — features are stored as a
+   compressed coreset representing normal appearance
+3. **Inference** — at inspection time, each patch
+   of the new image is compared to its nearest
+   neighbours in the memory bank
+4. **Scoring** — large distances from normal
+   features produce high anomaly scores
+5. **Localisation** — patch scores are assembled
+   into a pixel-level heatmap showing defect location
+    """)
+
+    st.markdown("---")
+    st.markdown("## Tech Stack")
+    st.markdown("""
+| Component | Technology |
+|-----------|------------|
+| Model | PatchCore (Anomalib 2.4.0) |
+| Backbone | WideResNet50 |
+| Framework | PyTorch |
+| Interface | Streamlit |
+| Image processing | OpenCV |
+| Deployment | Hugging Face Spaces |
+| Dataset | MVTec AD (metal nut category) |
+    """)
+
+    st.markdown("---")
+    st.markdown(
+        "<p style='color:#555555;font-size:12px;'>"
+        "Dataset: MVTec AD — Bergmann et al., "
+        "CVPR 2019. Built by Rhys Moroney as part "
+        "of a Quality Engineering portfolio.</p>",
+        unsafe_allow_html=True)
